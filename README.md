@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -73,3 +74,7 @@ export default defineConfig([
   },
 ])
 ```
+=======
+# facetrack
+The official source code repository for the client-side of the facetrack app.
+>>>>>>> 869c08a1253295f8b9dfc747d4e974dd4f6011df
