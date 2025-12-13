@@ -1,4 +1,4 @@
-export interface FormTypes {
+export interface InputTypes {
   placeholder: string;
   icon?: boolean;
   size?: string;
@@ -6,7 +6,9 @@ export interface FormTypes {
   color?: string;
   radius?: string;
   fieldId: string;
+  type: React.HTMLInputTypeAttribute;
   label: string;
+  className?: string;
   fieldName?: string;
   isPassword?: boolean;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
