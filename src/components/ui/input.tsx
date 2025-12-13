@@ -13,6 +13,7 @@ const Input: React.FC<InputTypes> = (props) => {
       </label>
       <div className="relative mt-1 mb-8">
         <input
+          required={props.required}
           type={
             props.isPassword ? (showPassword ? "text" : "password") : props.type
           }

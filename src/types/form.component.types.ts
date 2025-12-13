@@ -8,6 +8,7 @@ export interface InputTypes {
   fieldId: string;
   type: React.HTMLInputTypeAttribute;
   label: string;
+  required?: boolean;
   className?: string;
   fieldName?: string;
   isPassword?: boolean;

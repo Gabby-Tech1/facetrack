@@ -27,7 +27,8 @@ const Login: React.FC = () => {
         <div className="">
           {/*email field*/}
           <Input
-            type="text"
+            required={true}
+            type="email"
             placeholder="admin@facetrack.com"
             fieldId="email"
             icon
@@ -37,6 +38,7 @@ const Login: React.FC = () => {
           {/*password field*/}
           <Input
             type="password"
+            required={true}
             placeholder="Enter your password"
             fieldId="password"
             icon
@@ -46,6 +48,7 @@ const Login: React.FC = () => {
 
           {/*button*/}
           <ButtonComponent
+            type="button"
             className="w-full bg-accent/80 h-10 rounded-lg hover:bg-accent transition-colors cursor-pointer flex items-center justify-center mb-4"
             text="Sign In"
           ></ButtonComponent>
