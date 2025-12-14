@@ -11,7 +11,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Router>
       <Provider store={store}>
-        <Theme accentColor="grass">
+        <Theme accentColor="teal">
           <App />
         </Theme>
       </Provider>

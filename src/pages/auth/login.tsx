@@ -4,19 +4,22 @@ import ButtonComponent from "../../components/ui/button";
 import Input from "../../components/ui/input";
 import "../../App.css";
 import { Card } from "@radix-ui/themes";
+import { AppConstants } from "../../constants/app.constants";
 
 const Login: React.FC = () => {
+  const appName = AppConstants.APP_NAME;
+
   return (
     //global container for component
     <div className="flex flex-col items-center justify-center min-h-screen place-items-center">
       {/*container for header of auth page*/}
       <div className="flex flex-col items-center">
         <img
-          className=" mb-4 logo"
+          className=" mb-4 logo bg-accent"
           src={logo}
           alt="App Logo depicting a facial recognition system"
         />
-        <p className="large-text antialiased">FaceTrack</p>
+        <p className="large-text antialiased">{appName}</p>
         <p className="small-text antialiased text-gray-400">
           Sign in to your account
         </p>
@@ -49,7 +52,7 @@ const Login: React.FC = () => {
           {/*button*/}
           <ButtonComponent
             type="button"
-            className="w-full bg-accent/80 h-10 rounded-lg hover:bg-accent transition-colors cursor-pointer flex items-center justify-center mb-4"
+            className="w-full bg-accent/80 h-10 rounded-lg hover:bg-accent transition-colors cursor-pointer flex items-center justify-center mb-4 shadow-2xl"
             text="Sign In"
           ></ButtonComponent>
 
