@@ -1,10 +1,10 @@
 import "./App.css";
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import Login from "./pages/auth/login";
+import Login from "./pages/auth/Login";
 import { ThemeProvider } from "next-themes";
 import "@radix-ui/themes/styles.css";
-import Dashboard from "./pages/dashboard/dashboard";
+import Dashboard from "./pages/dashboard/Dashboard";
 
 const App: React.FC = () => {
   return (

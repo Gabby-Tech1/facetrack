@@ -21,3 +21,9 @@
 .card-bg {
   background-color: var(--color-card-background);
 }
+
+.small-logo {
+  width: 3rem;
+  border-radius: 1rem;
+  height: 3;
+}
