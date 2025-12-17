@@ -1,5 +1,9 @@
 @plugin "daisyui";
 
+html {
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
 .large-text {
   font-size: 2rem;
   font-weight: 600;
@@ -26,4 +30,12 @@
   width: 3rem;
   border-radius: 1rem;
   height: 3;
+}
+
+.light-theme-text {
+  color: hsl(222 47% 6%);
+}
+
+.dark-theme-text {
+  color: hsl(210 40% 98%);
 }

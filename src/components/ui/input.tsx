@@ -1,6 +1,6 @@
 import { Eye, EyeOff } from "lucide-react";
 import React, { useState } from "react";
-import type { InputTypes } from "../../types/form.component.types";
+import type { InputTypes } from "../../interfaces/form.component.interface";
 
 const Input: React.FC<InputTypes> = (props) => {
   const [showPassword, setShowPassword] = useState(false);

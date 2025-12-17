@@ -8,12 +8,14 @@ import Dashboard from "./pages/dashboard/Dashboard";
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider defaultTheme="dark" attribute="class">
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </ThemeProvider>
+    <div>
+      <ThemeProvider defaultTheme="dark" attribute="class">
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </ThemeProvider>
+    </div>
   );
 };
 

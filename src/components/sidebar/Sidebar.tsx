@@ -13,168 +13,168 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
-import { logo } from "../../imports/images/images";
 import { NavLink } from "react-router-dom";
 import { Card } from "@radix-ui/themes";
+import { logo } from "../../imports/images/images";
 import "../../App.css";
 
 const Sidebar: React.FC = () => {
-  const role: string = "admin";
-
+  const role = "admin";
   const user = "Dickson Peprah";
+  const [collapsed, setCollapsed] = React.useState(false);
+
   const sidebarItems = [
-    {
-      name: "Dashboard",
-      link: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Members",
-      link: "/members",
-      icon: Users,
-    },
-    {
-      name: "Sessions",
-      link: "/sessions",
-      icon: CalendarDays,
-    },
-    {
-      name: "Analytics",
-      link: "/analytics",
-      icon: BarChart3,
-    },
-    {
-      name: "Notifications",
-      link: "/notifications",
-      icon: Bell,
-    },
-    {
-      name: "Staff Management",
-      link: "/staff-management",
-      icon: UserCog, // 👈 better than Settings
-    },
-    {
-      name: "Class Reps",
-      link: "/class-reps",
-      icon: GraduationCap,
-    },
-    {
-      name: "Settings",
-      link: "/settings",
-      icon: Settings,
-    },
+    { name: "Dashboard", link: "/dashboard", icon: LayoutDashboard },
+    { name: "Members", link: "/members", icon: Users },
+    { name: "Sessions", link: "/sessions", icon: CalendarDays },
+    { name: "Analytics", link: "/analytics", icon: BarChart3 },
+    { name: "Notifications", link: "/notifications", icon: Bell },
+    { name: "Staff Management", link: "/staff-management", icon: UserCog },
+    { name: "Class Reps", link: "/class-reps", icon: GraduationCap },
+    { name: "Settings", link: "/settings", icon: Settings },
   ];
 
-  const repHiddenItems = ["Members", "Staff Management", "Class Reps"];
-  const staffHiddenItems = ["Staff Management", "Class Reps"];
   const displayName = user.split(" ");
 
-  const [collapsed, setCollapse] = React.useState(false);
-
-  const items = sidebarItems.filter((item) => {
-    if (role === "rep") {
-      return !repHiddenItems.includes(item.name);
-    } else if (role === "staff") {
-      return !staffHiddenItems.includes(item.name);
-    } else {
-      return true;
-    }
-  });
-
-  const updateCollapse = () => {
-    setCollapse(!collapsed);
-  };
   return (
-    <div className="flex flex-col h-screen px-5 overflow-hidden transition-all duration-300">
-      {/* Top section: logo + title */}
-      <div className="flex flex-row gap-2 items-center mb-5">
-        <img className="small-logo mt-5" src={logo} alt="App Logo" />
+    <aside
+      className={`h-screen flex flex-col bg-gray-900 border-r border-gray-800
+        transition-all duration-500 overflow-hidden
+        ${collapsed ? "w-20" : "w-full"}`}
+    >
+      {/* LOGO */}
+      <div className="flex items-center gap-3 px-4 py-5">
+        <img src={logo} alt="logo" className="small-logo shrink-0" />
         {!collapsed && (
-          <div className="flex flex-col mt-5 items-center">
-            <span className="font-bold antialiased text-xl text-white">
-              FaceCheck
-            </span>
-            <span className="text-xs text-gray-400">Attendance System</span>
+          <div>
+            <h1 className="text-white font-bold">FaceCheck</h1>
+            <p className="text-xs text-gray-400 overflow-clip text-start align-middle">
+              Attendance System
+            </p>
           </div>
         )}
       </div>
-      <hr className="text-gray-500 mb-5" />
 
-      {/* Middle section: navigation */}
-      <div className="flex flex-col gap-2">
-        {items.map(({ name, icon: Icon, link }) => (
+      <hr className="border-gray-800" />
+
+      {/* NAVIGATION */}
+      <nav className="flex flex-col gap-1 px-2 py-4">
+        {sidebarItems.map(({ name, link, icon: Icon }) => (
           <NavLink
+            key={name}
             to={link}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-sans ${
+              `
+              flex items-center h-11 rounded-xl text-sm font-medium
+              transition-all duration-300
+              ${collapsed ? "justify-center px-0" : "gap-3 px-3"}
+              ${
                 isActive
-                  ? "border-l-2 border-l-accent bg-accent/15 text-accent"
-                  : "text-gray-400 hover:bg-gray-800 transform duration-300 hover:text-white"
-              }`
+                  ? "bg-accent/15 text-accent border-l-2 border-l-accent"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              }
+            `
             }
           >
-            <Icon />
+            <Icon size={20} className="shrink-0" />
             {!collapsed && <span>{name}</span>}
           </NavLink>
         ))}
-      </div>
+      </nav>
 
-      {/* Spacer */}
+      {/* PUSH BOTTOM */}
       <div className="flex-1" />
 
-      <hr className="text-gray-500 mb-5" />
-      {/* Bottom section */}
-      <div className="flex flex-col gap-3 mb-5">
-        {!collapsed && (
+      <hr className="border-gray-800" />
+
+      {/* USER CARD */}
+      {!collapsed && (
+        <div className="px-4 py-3">
           <Card
-            style={{
-              borderRadius: 12,
-              backgroundColor: "rgba(55, 65, 81, 0.1)",
-              padding: "10px",
-            }}
             variant="surface"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: 12,
+              padding: 10,
+            }}
           >
-            <div className="flex flex-col items-start">
-              <span className="text-white antialised text-sm">
-                {displayName[0] + " " + displayName[1]}
-              </span>
-              <span className="text-xs text-gray-400">
-                {role === "admin"
-                  ? "Admin"
-                  : role === "staff"
-                  ? "Staff"
-                  : "Class Rep"}
-              </span>
-            </div>
+            <p className="text-white text-sm overflow-clip">
+              {displayName[0]} {displayName[1]}
+            </p>
+            <p className="text-xs text-gray-400 capitalize">{role}</p>
           </Card>
-        )}
+        </div>
+      )}
 
-        <button className="justify-start cursor-pointer ">
-          <div className="h-11 px-5 text-sm flex items-center gap-2 text-gray-400 hover:text-white font-medium hover:bg-gray-800 hover:rounded-xl hover:transform hover:duration-300">
-            <LockIcon size={19} />
-            {!collapsed && <span>Change Password</span>}
-          </div>
-        </button>
+      {/* ACTION BUTTONS */}
+      <div className="flex flex-col gap-1 px-2 pb-4">
+        {/* CHANGE PASSWORD */}
+        <SidebarButton
+          collapsed={collapsed}
+          icon={<LockIcon size={20} />}
+          label="Change Password"
+        />
 
-        <button className="justify-start cursor-pointer text-sm">
-          <div className="h-11 text-red-600 px-5 flex items-center gap-2 font-medium hover:bg-red-950 hover:bg-opacity-4 hover:rounded-xl hover:transform hover:duration-300">
-            <LogOutIcon size={19} />
-            {!collapsed && <span>Logout</span>}
-          </div>
-        </button>
+        {/* LOGOUT */}
+        <SidebarButton
+          collapsed={collapsed}
+          icon={<LogOutIcon size={20} />}
+          label="Logout"
+          danger
+        />
 
-        <button
-          className="justify-start cursor-pointer"
-          onClick={updateCollapse}
-        >
-          <div className="h-11 px-5 text-sm flex items-center gap-2 text-gray-400 hover:text-white font-medium hover:bg-gray-800 hover:rounded-xl hover:transform hover:duration-300">
-            {collapsed ? <ChevronRight /> : <ChevronLeft />}
-            {!collapsed && <span className="text-white">Collapse</span>}
-          </div>
-        </button>
+        {/* COLLAPSE */}
+        <SidebarButton
+          collapsed={collapsed}
+          icon={
+            collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />
+          }
+          label="Collapse"
+          onClick={() => setCollapsed(!collapsed)}
+        />
       </div>
-    </div>
+    </aside>
   );
 };
 
 export default Sidebar;
+
+/* -------------------------------- */
+/* REUSABLE BUTTON COMPONENT        */
+/* -------------------------------- */
+
+type SidebarButtonProps = {
+  icon: React.ReactNode;
+  label: string;
+  collapsed: boolean;
+  danger?: boolean;
+  onClick?: () => void;
+};
+
+const SidebarButton: React.FC<SidebarButtonProps> = ({
+  icon,
+  label,
+  collapsed,
+  danger,
+  onClick,
+}) => {
+  return (
+    <button onClick={onClick}>
+      <div
+        className={`
+          h-11 flex items-center rounded-xl text-sm font-medium
+          transition-all duration-300
+          ${collapsed ? "justify-center px-0" : "gap-2 px-4"}
+          ${
+            danger
+              ? "text-red-500 hover:bg-red-950/40"
+              : "text-gray-400 hover:bg-gray-800 hover:text-white"
+          }
+        `}
+      >
+        <span className="shrink-0">{icon}</span>
+        {!collapsed && <span>{label}</span>}
+      </div>
+    </button>
+  );
+};
