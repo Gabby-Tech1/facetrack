@@ -11,5 +11,4 @@ export interface AttendanceInterface {
   memberId?: string;
   id: string;
   session: SessionInterface;
-
 }

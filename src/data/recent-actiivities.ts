@@ -1,0 +1,51 @@
+export const recentActivities = [
+  {
+    id: "1",
+    activity: "Checked in to 'Exams at the GCB' session",
+    date: new Date("2025-11-16T09:00:00Z"),
+    memberName: "Dickson Peprah",
+    status: "present",
+  },
+  {
+    id: "2",
+    activity: "Checked out from 'Exams at the GCB' session",
+    date: new Date("2025-11-16T17:00:00Z"),
+    memberName: "Dickson Peprah",
+    status: "present",
+  },
+  {
+    id: "3",
+    activity: "Missed 'Weekly Meeting' session",
+    date: new Date("2025-11-15T10:00:00Z"),
+    memberName: "Jane Doe",
+    status: "absent",
+  },
+  {
+    id: "3",
+    activity: "Missed 'Weekly Meeting' session",
+    date: new Date("2025-11-15T10:00:00Z"),
+    memberName: "Jane Doe",
+    status: "absent",
+  },
+  {
+    id: "3",
+    activity: "Missed 'Weekly Meeting' session",
+    date: new Date("2025-11-15T10:00:00Z"),
+    memberName: "Jane Doe",
+    status: "absent",
+  },
+  {
+    id: "3",
+    activity: "Missed 'Weekly Meeting' session",
+    date: new Date("2025-11-15T10:00:00Z"),
+    memberName: "Jane Doe",
+    status: "absent",
+  },
+  {
+    id: "3",
+    activity: "Missed 'Weekly Meeting' session",
+    date: new Date("2025-11-15T10:00:00Z"),
+    memberName: "Jane Doe",
+    status: "absent",
+  },
+];

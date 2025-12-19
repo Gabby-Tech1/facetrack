@@ -8,8 +8,8 @@ export interface SessionInterface {
   attendance: AttendanceInterface[];
   department?: string;
   location?: string;
-  startTime: string;
-  endTime: string;
+  startTime: Date;
+  endTime: Date;
   expectedMembersCount?: number;
   actualMembersCount?: number;
   status: "active" | "scheduled" | "completed";

@@ -1,22 +1,9 @@
-export const chartData = [
-  {
-    day: "Mon",
-    value: 100,
-  },
-  {
-    day: "Tue",
-    value: 50,
-  },
-  {
-    day: "Wed",
-    value: 20,
-  },
-  {
-    day: "Thu",
-    value: 10,
-  },
-  {
-    day: "Fri",
-    value: 0,
-  },
-];
+import { AppServices } from "../services/app-services";
+import { attendance } from "./attendance";
+
+const appServices = new AppServices();
+
+const group = appServices.groupRecord(attendance);
+
+const chartData = appServices.chartData(group);
+export { chartData };
