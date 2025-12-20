@@ -70,12 +70,23 @@ export class AppServices {
     });
   }
 
+  getDiffInMinutes(startTime: Date, arrivalTime: Date) {
+    const diffInMs = startTime.getTime() - arrivalTime.getTime();
+    return Math.floor(diffInMs / 60000);
+  }
+
   getEarlyArrivals(arrivalRecords: AttendanceInterface[]) {
     return arrivalRecords
       .filter((record) => {
+        const currentMonth = new Date().getMonth();
+        if (record.date.getMonth() !== currentMonth) return false;
+        if (record.session.startTime === undefined) return false;
+        if (record.timeOfArrival === undefined) return false;
+        if (record.members?.length === 0) return false;
         if (record.status !== "present") return false;
         if (!record.members || record.members.length === 0) return false;
-        return record.timeOfArrival < record.session.startTime;
+        const isEarly = record.timeOfArrival <= record.session.startTime;
+        return isEarly;
       })
       .sort((a, b) => a.timeOfArrival.getTime() - b.timeOfArrival.getTime())
       .slice(0, 3);

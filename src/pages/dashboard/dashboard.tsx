@@ -1,6 +1,13 @@
 import React from "react";
 import Sidebar from "../../components/sidebar/Sidebar";
-import { Card, Heading, ScrollArea, Text } from "@radix-ui/themes";
+import {
+  Box,
+  Card,
+  Heading,
+  Progress,
+  ScrollArea,
+  Text,
+} from "@radix-ui/themes";
 import Header from "../../components/dashboard/Header";
 import {
   AlarmClockCheck,
@@ -8,7 +15,9 @@ import {
   AwardIcon,
   Calendar1,
   CircleCheck,
+  Clock,
   ClockAlert,
+  LocateIcon,
   LucideAward,
   PersonStanding,
   TrophyIcon,
@@ -45,18 +54,26 @@ const Dashboard: React.FC = () => {
 
   const services = new AppServices();
 
+  const sessionsData = sessions;
+
+  const activeSessions = sessionsData.filter(
+    (session) => session.status === "active" || session.status === "scheduled"
+  );
+
+  const earlyArrivals = services.getEarlyArrivals(attendance);
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* SIDEBAR */}
-      <div className="w-270px shrink-0">
-        <ScrollArea type="auto" className="h-full">
+      <div className="shrink-0 h-screen">
+        <ScrollArea type="auto" className="h-screen">
           <Sidebar />
         </ScrollArea>
       </div>
 
       {/* MAIN CONTENT */}
       <div className="flex-1 overflow-x-hidden">
-        <ScrollArea type="auto" className="h-full">
+        <ScrollArea type="auto" className="h-full overflow-x-hidden">
           <div className="p-4 max-w-full">
             {/* HEADER */}
             <Header />
@@ -134,7 +151,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           {/*charts section*/}
-          <div className="grid lg:grid-cols-3 gap-10 grid-cols-1 p-4">
+          <div className="grid lg:grid-cols-3 gap-4 lg:gap-10 grid-cols-1 p-4">
             <Card className="flex flex-1 lg:col-span-2 bg-slate-900/40 backdrop-blur border border-gray-800/40 rounded-xl p-6">
               <div className="flex justify-between">
                 <div className="flex flex-col items-start mb-4">
@@ -148,9 +165,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/*chart display*/}
-              <div
-                style={{ width: "100%", maxWidth: "1100px", height: "300px" }}
-              >
+              <div style={{ width: "100%", height: "300px" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={chartData}
@@ -293,100 +308,146 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/*card for early arrival list*/}
-          <Card className="w-full p-6 bg-slate-900/40 backdrop-blur border border-gray-800/40 rounded-xl">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-400">
-                  <TrophyIcon size={18} />
+          <div className="m-4">
+            <Card className="bg-slate-900/40 backdrop-blur border border-gray-800/40 rounded-xl ">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-400">
+                    <TrophyIcon size={18} />
+                  </div>
+                  <p className="text-white font-medium text-lg">
+                    Early Arrival Rewards
+                  </p>
                 </div>
-                <p className="text-white font-medium text-lg">
-                  Early Arrival Rewards
-                </p>
+
+                <p className="text-sm text-gray-400">Current Month</p>
               </div>
+              {/* Subtitle */}
+              <p className="text-sm text-gray-400/90 mb-6">
+                Recognising punctual members who arrived early
+              </p>
+              {/* List */}
 
-              <p className="text-sm text-gray-400">Current Month</p>
-            </div>
+              <div className="flex flex-col gap-4">
+                {earlyArrivals.length === 0 ? (
+                  <p className="text-gray-500 text-center">
+                    No early arrivals this month.
+                  </p>
+                ) : (
+                  earlyArrivals.map((member, index) => {
+                    const user = member.members?.[0]?.user;
+                    if (!user) return null;
 
-            {/* Subtitle */}
-            <p className="text-sm text-gray-400/90 mb-6">
-              Recognising punctual members who arrived early
-            </p>
-
-            {/* List */}
-            <div className="flex flex-col gap-4">
-              {services.getEarlyArrivals(attendance).map((member, index) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition"
-                >
-                  <div className="flex justify-center items-center gap-5">
-                    {index == 0 ? (
-                      <TrophyIcon className="text-yellow-400" />
-                    ) : index == 1 ? (
-                      <Award className="text-gray-400" />
-                    ) : index == 2 ? (
-                      <AwardIcon className="text-yellow-700" />
-                    ) : (
-                      <LucideAward className="text-gray-600" />
-                    )}
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={member.members?.[0]?.user.profilePicture}
-                        alt={member.members?.[0]?.user.name}
-                        className="w-9 h-9 rounded-full object-cover"
-                      />
-
-                      <div>
-                        <p className="text-white text-sm font-medium">
-                          {member.members?.[0]?.user.name}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {member.members?.[0]?.user.email}
-                        </p>
-                      </div>
-                    </div>
-                    <div
-                      className={`text-sm rounded-2xl items-center justify-center flex w-12 h-6 ${
-                        index === 0
-                          ? "text-yellow-400 bg-yellow-500/10"
-                          : index === 1
-                          ? "text-gray-400 bg-gray-500/10"
-                          : index === 2
-                          ? "text-yellow-700 bg-yellow-500/10"
-                          : "text-gray-600 bg-gray-500/10"
-                      } font-bold text-lg`}
-                    >
-                      {index === 0 ? (
-                        <div className="flex p-10 justify-center items-center mr-1 text-yellow-400">
-                          <Award className="text-yellow-400" size={15} />
-                          <p className="text-sm">1st</p>
-                        </div>
+                    const rankIcon =
+                      index === 0 ? (
+                        <TrophyIcon className="text-yellow-400" />
                       ) : index === 1 ? (
-                        <div>
-                          <div className="flex p-10 justify-center items-center mr-1 text-gray-400">
-                            <Award className="text-gray-400" size={15} />
-                            <p className="text-sm">2nd</p>
+                        <Award className="text-gray-400" />
+                      ) : index === 2 ? (
+                        <AwardIcon className="text-yellow-700" />
+                      ) : (
+                        <LucideAward className="text-gray-600" />
+                      );
+
+                    const rankLabel =
+                      index === 0
+                        ? "1st"
+                        : index === 1
+                        ? "2nd"
+                        : index === 2
+                        ? "3rd"
+                        : `${index + 1}th`;
+
+                    const rankStyle =
+                      index === 0
+                        ? "text-yellow-400 bg-yellow-500/10"
+                        : index === 1
+                        ? "text-gray-400 bg-gray-500/10"
+                        : index === 2
+                        ? "text-yellow-700 bg-yellow-500/10"
+                        : "text-gray-600 bg-gray-500/10";
+
+                    return (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition"
+                      >
+                        <div className="flex items-center gap-5">
+                          {rankIcon}
+
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={user.profilePicture}
+                              alt={user.name}
+                              className="w-9 h-9 rounded-full object-cover"
+                            />
+
+                            <div>
+                              <p className="text-xs text-gray-400 break-all sm:break-normal truncate max-w-160px">
+                                {user.name}
+                              </p>
+                              <p className="text-xs text-gray-400 break-all sm:break-normal truncate max-w-160px">
+                                {user.email}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div
+                            className={`flex items-center justify-center px-3 py-1 rounded-2xl text-sm font-semibold ${rankStyle}`}
+                          >
+                            {rankLabel}
                           </div>
                         </div>
-                      ) : index === 2 ? (
-                        <div className="flex p-10 justify-center items-center mr-1 text-yellow-700">
-                          <AwardIcon className="text-yellow-700" size={15} />
-                          <p className="text-sm">3rd</p>
-                        </div>
-                      ) : (
-                        `${index + 1}th`
-                      )}
-                    </div>
-                  </div>
 
-                  <span className="text-green-400 text-sm font-semibold">
-                    +5 Points
-                  </span>
-                </div>
+                        <div>
+                          <Clock
+                            className="inline-block mr-2 text-green-400"
+                            size={13}
+                          />
+                          <span className="text-green-400 text-xs font-semibold">
+                            +
+                            {services.getDiffInMinutes(
+                              member.session.startTime,
+                              member.timeOfArrival
+                            )}{" "}
+                            mins
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/*sessions section*/}
+          <div className="p-4 flex flex-col gap-2">
+            <p className="text-lg font-semibold text-white">
+              Active and Upcoming Sessions
+            </p>
+            <p className="text-sm text-gray-400">
+              {activeSessions.length} sessions currently running or scheduled
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              {activeSessions.slice(0, 4).map((session) => (
+                <SessionCard
+                  sessionName={session.name}
+                  department={session.department ?? "Department not specified"}
+                  location={session.location ?? "Location not specified"}
+                  startTime={session.startTime}
+                  endTime={session.endTime}
+                  expectedMembersCount={session.expectedMembersCount ?? 0}
+                  actualMembersCount={session.actualMembersCount ?? 0}
+                  status={session.status}
+                  creatorName={session.creator.name ?? "No creator found"}
+                  type={session.type}
+                  category={session.category ?? "No category specified"}
+                ></SessionCard>
               ))}
             </div>
-          </Card>
+          </div>
         </ScrollArea>
       </div>
     </div>
@@ -462,5 +523,94 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         </div>
       </div>
     </Card>
+  );
+};
+
+type SessionCardProps = {
+  sessionName: string;
+  department: string;
+  location: string;
+  startTime: Date;
+  endTime: Date;
+  expectedMembersCount: number;
+  actualMembersCount: number;
+  status: "active" | "scheduled" | "completed";
+  creatorName: string;
+  type: "check-in" | "check-out";
+  category: string;
+};
+
+const SessionCard: React.FC<SessionCardProps> = (props) => {
+  const rate =
+    ((props.actualMembersCount ?? 0) / (props.expectedMembersCount ?? 1)) * 100;
+
+  const statusStyle =
+    props.status === "active"
+      ? "text-green-400 bg-green-500/10"
+      : props.status === "scheduled"
+      ? "text-yellow-400 bg-yellow-500/10"
+      : "text-gray-400 bg-gray-500/10";
+
+  return (
+    <Card className="bg-slate-900/40 backdrop-blur border border-gray-800/40 rounded-xl p-5 hover:scale-[1.02] transition duration-300 hover:border-solid hover:border-accent">
+      <div className="flex flex-col gap-4">
+        {/* Top row */}
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-md">
+            {props.category}
+          </span>
+          <span
+            className={`text-xs font-semibold px-2 py-1 rounded-md ${statusStyle}`}
+          >
+            {props.status}
+          </span>
+        </div>
+
+        {/* Title */}
+        <p className="text-white font-semibold text-lg truncate">
+          {props.sessionName}
+        </p>
+
+        {/* Stats */}
+        <div className="flex flex-col gap-2 text-sm">
+          <RowStats icon={<LocateIcon size={14} />} value={props.location} />
+          <RowStats
+            icon={<Clock size={14} />}
+            value={`${props.startTime.toLocaleTimeString()} - ${props.endTime.toLocaleTimeString()}`}
+          />
+          <RowStats
+            icon={<PersonStanding size={14} />}
+            value={`${props.actualMembersCount} / ${props.expectedMembersCount} members`}
+          />
+          <p className="text-xs text-gray-500">
+            Created by{" "}
+            <span className="text-gray-300">{props.creatorName}</span>
+          </p>
+        </div>
+
+        {/* Progress */}
+        <div className="flex justify-between items-center text-xs text-gray-400 mt-2">
+          <span>Attendance</span>
+          <span className="text-white font-medium">{rate.toFixed(1)}%</span>
+        </div>
+
+        <Box>
+          <Progress value={rate} />
+        </Box>
+      </div>
+    </Card>
+  );
+};
+
+type StatsProps = {
+  icon: React.ReactNode;
+  value: number | string;
+};
+const RowStats: React.FC<StatsProps> = (props) => {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="text-gray-400 shrink-0">{props.icon}</div>
+      <p className="text-gray-300 truncate">{props.value}</p>
+    </div>
   );
 };
