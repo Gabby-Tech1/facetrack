@@ -5,6 +5,7 @@ import Login from "./pages/auth/Login";
 import { ThemeProvider } from "next-themes";
 import "@radix-ui/themes/styles.css";
 import Dashboard from "./pages/dashboard/Dashboard";
+import Members from "./pages/member/Members";
 
 const App: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/members" element={<Members />} />
         </Routes>
       </ThemeProvider>
     </div>

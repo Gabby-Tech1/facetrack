@@ -80,6 +80,7 @@ export class AppServices {
       .filter((record) => {
         const currentMonth = new Date().getMonth();
         if (record.date.getMonth() !== currentMonth) return false;
+        if (record.date.getFullYear() !== new Date().getFullYear()) return false;
         if (record.session.startTime === undefined) return false;
         if (record.timeOfArrival === undefined) return false;
         if (record.members?.length === 0) return false;

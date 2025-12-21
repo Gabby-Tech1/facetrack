@@ -6,9 +6,9 @@ export const attendance: AttendanceInterface[] = [
     memberId: "1",
     id: "1",
     status: "present",
-    date: new Date("2025-11-16"),
-    timeOfArrival: new Date("2025-11-15T04:00:00Z"),
-    timeOfDeparture: new Date("2025-11-15T17:00:00Z"),
+    date: new Date("2025-12-16"),
+    timeOfArrival: new Date("2025-12-16T04:00:00Z"),
+    timeOfDeparture: new Date("2025-12-16T17:00:00Z"),
     members: [
       {
         id: "1",
@@ -36,7 +36,7 @@ export const attendance: AttendanceInterface[] = [
       name: "Exams at the GCB",
       department: "Computer Science",
       location: "GCB Auditorium",
-      startTime: new Date("2025-11-15T06:00:00Z"),
+      startTime: new Date("2025-12-16T06:00:00Z"),
       endTime: new Date("2025-12-25T17:00:00Z"),
       expectedMembersCount: 100,
       actualMembersCount: 500,
@@ -56,9 +56,9 @@ export const attendance: AttendanceInterface[] = [
     memberId: "2",
     id: "2",
     status: "present",
-    date: new Date("2025-11-15"),
-    timeOfArrival: new Date("2025-11-15T02:00:00Z"),
-    timeOfDeparture: new Date("2025-11-15T17:00:00Z"),
+    date: new Date("2025-12-16"),
+    timeOfArrival: new Date("2025-12-16T02:00:00Z"),
+    timeOfDeparture: new Date("2025-12-16T17:00:00Z"),
     members: [
       {
         id: "2",
@@ -105,7 +105,7 @@ export const attendance: AttendanceInterface[] = [
     memberId: "3",
     id: "3",
     status: "present",
-    date: new Date("2025-11-15"),
+    date: new Date("2025-12-15"),
     timeOfArrival: new Date("2025-11-15T04:00:00Z"),
     timeOfDeparture: new Date("2025-11-15T17:00:00Z"),
     members: [
@@ -155,7 +155,7 @@ export const attendance: AttendanceInterface[] = [
     memberId: "4",
     id: "4",
     status: "present",
-    date: new Date("2025-11-15"),
+    date: new Date("2025-12-16"),
     timeOfArrival: new Date("2025-11-15T01:00:00Z"),
     timeOfDeparture: new Date("2025-11-15T17:00:00Z"),
     members: [],
