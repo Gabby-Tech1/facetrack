@@ -1,4 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import type { AttendanceInterface } from "../interfaces/attendance.interface";
+import autoTable from "jspdf-autotable";
 
 export class AppServices {
   getDayName(date: string): string | undefined {
@@ -80,7 +84,8 @@ export class AppServices {
       .filter((record) => {
         const currentMonth = new Date().getMonth();
         if (record.date.getMonth() !== currentMonth) return false;
-        if (record.date.getFullYear() !== new Date().getFullYear()) return false;
+        if (record.date.getFullYear() !== new Date().getFullYear())
+          return false;
         if (record.session.startTime === undefined) return false;
         if (record.timeOfArrival === undefined) return false;
         if (record.members?.length === 0) return false;
@@ -91,5 +96,47 @@ export class AppServices {
       })
       .sort((a, b) => a.timeOfArrival.getTime() - b.timeOfArrival.getTime())
       .slice(0, 3);
+  }
+
+  exportFile(members: any[]) {
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(12);
+      doc.text("Members List", 14, 22);
+
+      const tableColumn = [
+        "Name",
+        "Email",
+        "Role",
+        "Department",
+        "ID",
+        "Phone",
+      ];
+
+      const tableRows: any[] = [];
+
+      members.forEach((member) => {
+        const memberData = [
+          member.user.name,
+          member.user.email,
+          member.user.role,
+          member.department ?? "General",
+          member.id,
+          member.guardianPhone ?? "N/A",
+        ];
+        tableRows.push(memberData);
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 30,
+      });
+
+      doc.save("Members.pdf");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      throw new Error("Failed to export PDF");
+    }
   }
 }

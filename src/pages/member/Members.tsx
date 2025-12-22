@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AppServices } from "../../services/app-services";
 import { members } from "../../data/members";
+import { toast } from "sonner";
 
 const Members: React.FC = () => {
   const [role, setRole] = useState<string>("all");
@@ -38,6 +39,16 @@ const Members: React.FC = () => {
       : members.filter((member) => member.user.role === role);
 
   const services = new AppServices();
+
+  const showSonnerForExport = () => {
+    try {
+      services.exportFile(filteredMembers);
+      toast.success("Members exported successfully.");
+    } catch (error) {
+      console.error("Error exporting members:", error);
+      toast.error("An error occurred while exporting members.");
+    }
+  };
   return (
     <div className="flex h-screen overflow-hidden">
       {/*SIDEBAR*/}
@@ -70,6 +81,7 @@ const Members: React.FC = () => {
               {/* Actions */}
               <div className="flex items-center gap-3">
                 <Button
+                  onClick={() => showSonnerForExport()} // <-- here
                   style={{ cursor: "pointer" }}
                   variant="soft"
                   radius="large"
