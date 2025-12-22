@@ -17,13 +17,13 @@ export interface UserInterface {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "rep" | "staff";
+  role: "admin" | "rep" | "staff" | "student";
   profilePicture?: string;
 }
 
 export interface Staff {
   id: string;
   user: UserInterface;
-  sessions: SessionInterface[],
-  members: MemberInterface[],
+  sessions: SessionInterface[];
+  members: MemberInterface[];
 }
