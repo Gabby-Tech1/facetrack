@@ -6,25 +6,20 @@ import {
   Select,
   Text,
   TextField,
-} from "@radix-ui/themes";
-import React, { useState } from "react";
-import Sidebar from "../../components/sidebar/Sidebar";
-import Header from "../../components/dashboard/Header";
-import {
+  React,
+  useState,
+  Sidebar,
+  Header,
   DownloadIcon,
   FilterIcon,
-  MailIcon,
-  MoreVertical,
-  PhoneCallIcon,
   PlusIcon,
   Search,
-  Shield,
-  User,
-} from "lucide-react";
-import { AppServices } from "../../services/app-services";
-import { members } from "../../data/members";
-import { toast } from "sonner";
+  AppServices,
+  members,
+  toast,
+} from "../../exports/members.exports";
 
+import { MemberCard } from "../../components/members/MemberCard";
 const Members: React.FC = () => {
   const [role, setRole] = useState<string>("all");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -68,7 +63,7 @@ const Members: React.FC = () => {
 
             {/* PAGE TITLE */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              {/* Title & Subtitle */}
+              {/* TITLE & SUBTITLE*/}
               <div>
                 <Heading className="text-2xl font-semibold text-white">
                   Members
@@ -78,7 +73,7 @@ const Members: React.FC = () => {
                 </Text>
               </div>
 
-              {/* Actions */}
+              {/* ACTION */}
               <div className="flex items-center gap-3">
                 <Button
                   onClick={() => showSonnerForExport()} // <-- here
@@ -158,6 +153,7 @@ const Members: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredMembers.map((member, index) => (
                   <MemberCard
+                    globalRole={role}
                     isHovered={hoveredId === member.id}
                     hoverChange={(isHovered) =>
                       setHoveredId(isHovered ? member.id : null)
@@ -166,10 +162,12 @@ const Members: React.FC = () => {
                     name={member.user.name}
                     email={member.user.email}
                     role={member.user.role}
+                    isMinor={member.isMinor}
                     id={member.id}
                     phone={member.guardianPhone ?? "N/A"}
                     department={member.department ?? "General"}
                     profilePicture={member.user.profilePicture ?? ""}
+                    attendanceRecords={member.attendanceRecords}
                   />
                 ))}
               </div>
@@ -182,93 +180,3 @@ const Members: React.FC = () => {
 };
 
 export default Members;
-
-type MemberTypes = {
-  name: string;
-  profilePicture: string;
-  role: string;
-  id: string;
-  email: string;
-  phone: string;
-  department: string;
-  isHovered?: boolean | undefined;
-  hoverChange: (isHovered: boolean) => void;
-};
-
-const MemberCard: React.FC<MemberTypes> = (props) => {
-  const capitalizedRole =
-    props.role.charAt(0).toUpperCase() + props.role.slice(1);
-  return (
-    <Card
-      onMouseEnter={() => props.hoverChange(true)}
-      onMouseLeave={() => props.hoverChange(false)}
-      className="
-        bg-slate-900/40 backdrop-blur
-        border border-gray-800/40
-        rounded-xl p-4
-        transition-all duration-300
-        group
-        hover:border-accent hover:shadow-lg hover:shadow-accent/10
-      "
-    >
-      {/* TOP */}
-      <div className="flex">
-        <div className="flex items-center gap-4">
-          {props.profilePicture ? (
-            <img
-              src={props.profilePicture}
-              alt={props.name}
-              className="w-12 h-12 group-hover:border-solid group-hover:border-accent group-hover:transition group-hover:duration-300 rounded-lg object-cover border border-gray-700"
-            />
-          ) : (
-            <User className="w-10 h-10 text-gray-600" />
-          )}
-
-          <div className="flex-1 flex flex-col gap-1">
-            <div className="flex items-center gap-5">
-              <p className="text-white font-semibold">{props.name}</p>
-              {(props.role === "admin" ||
-                props.role === "staff" ||
-                props.role === "rep") && (
-                <Shield className="w-4 h-4 text-yellow-500" />
-              )}
-            </div>
-            <div className="flex gap-2 text-xs text-gray-400">
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-accent">
-                {capitalizedRole}
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-accent">
-                {props.department}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">ID: {props.id}</p>
-          </div>
-        </div>
-
-        {/*THREE DOTS FOR MORE OPTIONS */}
-        {props.isHovered && (
-          <div className="ml-auto">
-            <button className="text-gray-400 hover:text-white cursor-pointer">
-              <MoreVertical className="w-4 h-4 text-white" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* DIVIDER */}
-      <hr className="my-3 border-gray-800/60" />
-
-      {/* Contact */}
-      <div className="flex flex-col gap-2 text-sm text-gray-300">
-        <div className="flex items-center gap-2">
-          <MailIcon className="w-4 h-4 text-gray-400" />
-          <span className="truncate">{props.email}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <PhoneCallIcon className="w-4 h-4 text-gray-400" />
-          <span>{props.phone}</span>
-        </div>
-      </div>
-    </Card>
-  );
-};

@@ -101,7 +101,7 @@ export class AppServices {
   exportFile(members: any[]) {
     try {
       const doc = new jsPDF();
-      doc.setFontSize(12);
+      doc.setFontSize(12); //this sets the font size for the document
       doc.text("Members List", 14, 22);
 
       const tableColumn = [
@@ -111,11 +111,26 @@ export class AppServices {
         "Department",
         "ID",
         "Phone",
+        "Attendance Rate",
       ];
 
       const tableRows: any[] = [];
 
       members.forEach((member) => {
+        const attendanceRecords = member.attendanceRecords || [];
+        const presentCount = attendanceRecords.filter(
+          (record: any) => record.status === "present"
+        ).length;
+        const lateCount = attendanceRecords.filter(
+          (record: any) => record.status === "late"
+        ).length;
+        const attendanceRate =
+          attendanceRecords.length > 0
+            ? (
+                ((presentCount + lateCount) / attendanceRecords.length) *
+                100
+              ).toFixed(2)
+            : "0.00";
         const memberData = [
           member.user.name,
           member.user.email,
@@ -123,6 +138,7 @@ export class AppServices {
           member.department ?? "General",
           member.id,
           member.guardianPhone ?? "N/A",
+          `${attendanceRate}%`,
         ];
         tableRows.push(memberData);
       });
@@ -136,7 +152,7 @@ export class AppServices {
       doc.save("Members.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      throw new Error("Failed to export PDF");
+      throw new Error(error instanceof Error ? error.message : "Unknown error");
     }
   }
 }

@@ -9,6 +9,7 @@ export interface SessionInterface {
   attendance: AttendanceInterface[];
   department?: string;
   location?: string;
+  yearGroup?: string;
   startTime: Date;
   endTime: Date;
   expectedMembersCount?: number;
