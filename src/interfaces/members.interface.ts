@@ -1,17 +1,5 @@
-import type { AttendanceInterface } from "./attendance.interface";
-import type { SessionInterface } from "./session.interface";
-
-export interface MemberInterface {
-  id: string;
-  department?: string;
-  user: UserInterface;
-  embeddings: string;
-  isMinor: boolean;
-  guardianPhone?: string;
-  guardianEmail?: string;
-  guardianName?: string;
-  attendanceRecords: AttendanceInterface[];
-}
+// Legacy member interface - kept for backwards compatibility with old components
+// New user data uses src/interfaces/user.interface.ts and src/data/users.ts
 
 export interface UserInterface {
   id: string;
@@ -21,31 +9,60 @@ export interface UserInterface {
   profilePicture?: string;
 }
 
-export interface Staff {
+// Legacy attendance record format
+export interface LegacyAttendanceRecord {
   id: string;
-  user: UserInterface;
-  sessions: SessionInterface[];
-  members: MemberInterface[];
+  memberId: string;
+  sessionId: string;
+  status: string;
+  date: Date;
+  timeOfArrival: Date;
+  timeOfDeparture?: Date;
+  session: LegacySession;
 }
 
-export type MemberTypes = {
-  name: string;
-  profilePicture: string;
-  role: string;
-  globalRole: string;
+// Legacy session format
+export interface LegacySession {
   id: string;
-  email: string;
-  yearGroup?: number;
+  type: string;
+  name: string;
+  attendance: unknown[];
+  department?: string;
+  startTime: Date;
+  endTime: Date;
+  status: string;
+  creator: UserInterface;
+}
+
+export interface MemberInterface {
+  id: string;
+  department?: string;
+  user: UserInterface;
+  embeddings?: string;
   isMinor?: boolean;
-  phone: string;
-  status?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  guardianName?: string;
+  attendanceRecords: LegacyAttendanceRecord[];
+}
+
+// Props interface for MemberCard component
+export interface MemberTypes {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "rep" | "staff" | "student";
+  profilePicture?: string;
+  department: string;
+  phone?: string;
+  isHovered?: boolean;
+  hoverChange: (hovered: boolean) => void;
+  isMinor?: boolean;
+  isMinorChange?: (isMinor: boolean) => void;
   guardianName?: string;
   guardianEmail?: string;
   guardianPhone?: string;
-  department: string;
-  isHovered?: boolean | undefined;
-  inputFieldChange?: (value: string) => void;
-  isMinorChange?: (value: boolean) => void;
-  hoverChange: (isHovered: boolean) => void;
-  attendanceRecords?: AttendanceInterface[];
-};
+  yearGroup?: number;
+  status?: string;
+  attendanceRecords?: LegacyAttendanceRecord[];
+}

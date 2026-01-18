@@ -54,12 +54,15 @@ const Members: React.FC = () => {
       </div>
 
       {/*MAIN CONTENT*/}
-      <div className="flex-1 overflow-x-hidden">
-        <ScrollArea type="auto" className="h-screen">
-          <div className="p-4 max-w-full">
-            {/*HEADER*/}
-            <Header />
-            <hr className="my-4 border-gray-700/40" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-10 bg-gray-950 px-4 pt-4 pb-2">
+          <Header />
+          <hr className="mt-4 border-gray-700/40" />
+        </div>
+
+        <ScrollArea type="auto" className="flex-1">
+          <div className="p-4 pt-2 max-w-full">
 
             {/* PAGE TITLE */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -118,12 +121,12 @@ const Members: React.FC = () => {
                         {role === "all"
                           ? "All Roles"
                           : role === "student"
-                          ? "Students"
-                          : role === "staff"
-                          ? "Staff"
-                          : role === "admin"
-                          ? "Admins"
-                          : "Reps"}
+                            ? "Students"
+                            : role === "staff"
+                              ? "Staff"
+                              : role === "admin"
+                                ? "Admins"
+                                : "Reps"}
                       </div>
                     </Select.Trigger>
 
@@ -153,7 +156,6 @@ const Members: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredMembers.map((member, index) => (
                   <MemberCard
-                    globalRole={role}
                     isHovered={hoveredId === member.id}
                     hoverChange={(isHovered) =>
                       setHoveredId(isHovered ? member.id : null)

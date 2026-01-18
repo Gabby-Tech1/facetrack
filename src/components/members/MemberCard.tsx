@@ -1,5 +1,5 @@
 import type React from "react";
-import type { AttendanceInterface } from "../../interfaces/attendance.interface";
+import type { LegacyAttendanceRecord } from "../../interfaces/members.interface";
 import {
   AlertTriangle,
   MailIcon,
@@ -60,8 +60,8 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
               {(props.role === "admin" ||
                 props.role === "staff" ||
                 props.role === "rep") && (
-                <Shield className="w-4 h-4 text-yellow-500" />
-              )}
+                  <Shield className="w-4 h-4 text-yellow-500" />
+                )}
             </div>
             <div className="flex gap-2 text-xs text-gray-400">
               <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-accent">
@@ -139,10 +139,10 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                                     {props.role === "admin"
                                       ? "Admin"
                                       : props.role === "staff"
-                                      ? "Staff"
-                                      : props.role === "rep"
-                                      ? "Rep"
-                                      : "Student"}
+                                        ? "Staff"
+                                        : props.role === "rep"
+                                          ? "Rep"
+                                          : "Student"}
                                   </div>
                                 </Select.Trigger>
                                 <Select.Content>
@@ -196,11 +196,11 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                                   <div className="flex gap-2 justify-between items-center w-full">
                                     {props.status === "active"
                                       ? "Active"
-                                      : props.role === "suspended"
-                                      ? "Suspended"
-                                      : props.role === "pending"
-                                      ? "Pending"
-                                      : "Unknown"}
+                                      : props.status === "suspended"
+                                        ? "Suspended"
+                                        : props.status === "pending"
+                                          ? "Pending"
+                                          : "Unknown"}
                                   </div>
                                 </Select.Trigger>
                                 <Select.Content>
@@ -228,14 +228,14 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                                     {props.yearGroup === 1
                                       ? "Year 1"
                                       : props.yearGroup === 2
-                                      ? "Year 2"
-                                      : props.yearGroup === 3
-                                      ? "Year 3"
-                                      : props.yearGroup === 4
-                                      ? "Year 4"
-                                      : props.yearGroup === 5
-                                      ? "Year 5"
-                                      : "Year 6"}
+                                        ? "Year 2"
+                                        : props.yearGroup === 3
+                                          ? "Year 3"
+                                          : props.yearGroup === 4
+                                            ? "Year 4"
+                                            : props.yearGroup === 5
+                                              ? "Year 5"
+                                              : "Year 6"}
                                   </div>
                                 </Select.Trigger>
                                 <Select.Content>
@@ -371,7 +371,7 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                               </div>
                               <div className="ml-auto text-xs text-gray-300">
                                 {props.attendanceRecords &&
-                                props.attendanceRecords.length > 0
+                                  props.attendanceRecords.length > 0
                                   ? `${props.attendanceRecords.length} records`
                                   : "Sample data"}
                               </div>
@@ -381,7 +381,7 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                           {(() => {
                             const records =
                               props.attendanceRecords &&
-                              props.attendanceRecords.length > 0
+                                props.attendanceRecords.length > 0
                                 ? props.attendanceRecords
                                 : [];
                             const presentCount = records.filter(
@@ -397,10 +397,10 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                             const attendanceRate =
                               totalRecords > 0
                                 ? Math.round(
-                                    ((presentCount + lateCount) /
-                                      totalRecords) *
-                                      100
-                                  )
+                                  ((presentCount + lateCount) /
+                                    totalRecords) *
+                                  100
+                                )
                                 : 0;
 
                             return (
@@ -445,13 +445,12 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                                       Attendance Rate
                                     </span>
                                     <span
-                                      className={`text-lg font-bold ${
-                                        attendanceRate >= 80
-                                          ? "text-teal-400"
-                                          : attendanceRate >= 60
+                                      className={`text-lg font-bold ${attendanceRate >= 80
+                                        ? "text-teal-400"
+                                        : attendanceRate >= 60
                                           ? "text-yellow-400"
                                           : "text-red-400"
-                                      }`}
+                                        }`}
                                     >
                                       {attendanceRate}%
                                     </span>
@@ -464,40 +463,40 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                           <ScrollArea type="auto" className="max-h-[50vh]">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {(props.attendanceRecords &&
-                              props.attendanceRecords.length > 0
+                                props.attendanceRecords.length > 0
                                 ? props.attendanceRecords
                                 : ([
-                                    {
-                                      id: "sample-a1",
-                                      memberId: props.id,
-                                      sessionId: "sample-s1",
-                                      status: "present",
-                                      date: new Date(),
-                                      timeOfArrival: new Date(),
-                                      timeOfDeparture: new Date(
+                                  {
+                                    id: "sample-a1",
+                                    memberId: props.id,
+                                    sessionId: "sample-s1",
+                                    status: "present",
+                                    date: new Date(),
+                                    timeOfArrival: new Date(),
+                                    timeOfDeparture: new Date(
+                                      new Date().getTime() +
+                                      2 * 60 * 60 * 1000
+                                    ),
+                                    session: {
+                                      id: "sample-s1",
+                                      type: "check-in",
+                                      name: "Sample Session",
+                                      attendance: [],
+                                      startTime: new Date(),
+                                      endTime: new Date(
                                         new Date().getTime() +
-                                          2 * 60 * 60 * 1000
+                                        2 * 60 * 60 * 1000
                                       ),
-                                      session: {
-                                        id: "sample-s1",
-                                        type: "check-in",
-                                        name: "Sample Session",
-                                        attendance: [],
-                                        startTime: new Date(),
-                                        endTime: new Date(
-                                          new Date().getTime() +
-                                            2 * 60 * 60 * 1000
-                                        ),
-                                        status: "completed",
-                                        creator: {
-                                          id: "sample-u",
-                                          name: "System",
-                                          email: "system@example.com",
-                                          role: "admin",
-                                        },
+                                      status: "completed",
+                                      creator: {
+                                        id: "sample-u",
+                                        name: "System",
+                                        email: "system@example.com",
+                                        role: "admin",
                                       },
                                     },
-                                  ] as AttendanceInterface[])
+                                  },
+                                ] as LegacyAttendanceRecord[])
                               ).map((rec) => (
                                 <Card
                                   key={rec.id}
@@ -515,13 +514,12 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                                       </span>
                                     </div>
                                     <span
-                                      className={`text-xs px-2 py-1 rounded-full ${
-                                        rec.status === "present"
-                                          ? "bg-teal-700/30 text-teal-300"
-                                          : rec.status === "late"
+                                      className={`text-xs px-2 py-1 rounded-full ${rec.status === "present"
+                                        ? "bg-teal-700/30 text-teal-300"
+                                        : rec.status === "late"
                                           ? "bg-yellow-700/30 text-yellow-300"
                                           : "bg-red-700/30 text-red-300"
-                                      }`}
+                                        }`}
                                     >
                                       {rec.status.charAt(0).toUpperCase() +
                                         rec.status.slice(1)}
@@ -544,11 +542,11 @@ export const MemberCard: React.FC<MemberTypes> = (props) => {
                                       <p className="font-medium">
                                         {rec.timeOfDeparture
                                           ? new Date(
-                                              rec.timeOfDeparture
-                                            ).toLocaleTimeString([], {
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })
+                                            rec.timeOfDeparture
+                                          ).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })
                                           : "—"}
                                       </p>
                                     </div>

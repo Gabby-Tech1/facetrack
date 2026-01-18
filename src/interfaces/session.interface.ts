@@ -1,19 +1,35 @@
 import type { AttendanceInterface } from "./attendance.interface";
-import type { UserInterface } from "./members.interface";
+
+export type SessionType = "CLASS" | "EXAM" | "PRACTICAL" | "SEMINAR" | "OTHER";
+export type SessionMode = "CHECK_IN" | "CHECK_OUT" | "CHECK_IN_OUT";
+export type SessionStatus = "OPEN" | "CLOSED" | "SCHEDULED";
+
+export interface SessionCreator {
+  id: string;
+  name: string;
+  email: string;
+  role: "lecturer" | "system_admin";
+}
 
 export interface SessionInterface {
   id: string;
-  category?: string;
-  type: "check-in" | "check-out";
   name: string;
-  attendance: AttendanceInterface[];
+  type: SessionType;
+  mode: SessionMode;
+  status: SessionStatus;
+  courseId: string;
+  courseName: string;
+  courseCode: string;
   department?: string;
   location?: string;
-  yearGroup?: string;
   startTime: Date;
   endTime: Date;
-  expectedMembersCount?: number;
-  actualMembersCount?: number;
-  status: "active" | "scheduled" | "completed";
-  creator: UserInterface;
+  lateThreshold: number; // minutes after start to be marked late
+  absentThreshold: number; // minutes after start to be marked absent
+  token: string; // 6-char access token
+  expectedMembersCount: number;
+  actualMembersCount: number;
+  attendance: AttendanceInterface[];
+  creator: SessionCreator;
+  createdAt: Date;
 }

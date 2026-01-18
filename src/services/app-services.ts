@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import type { AttendanceInterface } from "../interfaces/attendance.interface";
 import autoTable from "jspdf-autotable";
+import type { AttendanceInterface } from "../interfaces/attendance.interface";
 
 export class AppServices {
   getDayName(date: string): string | undefined {
@@ -29,20 +29,20 @@ export class AppServices {
         if (!acc[day]) {
           acc[day] = {
             present: 0,
-            expected: record.members?.length ?? 100,
+            expected: 100, // Default expected count
             absent: 0,
             late: 0,
           };
         }
-        if (record.status === "present") {
+        if (record.status === "PRESENT") {
           acc[day].present += 1;
         }
 
-        if (record.status === "absent") {
+        if (record.status === "ABSENT") {
           acc[day].absent += 1;
         }
 
-        if (record.status === "late") {
+        if (record.status === "LATE") {
           acc[day].late += 1;
         }
         return acc;
@@ -86,22 +86,22 @@ export class AppServices {
         if (record.date.getMonth() !== currentMonth) return false;
         if (record.date.getFullYear() !== new Date().getFullYear())
           return false;
-        if (record.session.startTime === undefined) return false;
-        if (record.timeOfArrival === undefined) return false;
-        if (record.members?.length === 0) return false;
-        if (record.status !== "present") return false;
-        if (!record.members || record.members.length === 0) return false;
-        const isEarly = record.timeOfArrival <= record.session.startTime;
-        return isEarly;
+        if (!record.checkInTime) return false;
+        if (record.status !== "PRESENT") return false;
+        return true;
       })
-      .sort((a, b) => a.timeOfArrival.getTime() - b.timeOfArrival.getTime())
+      .sort((a, b) => {
+        const aTime = a.checkInTime?.getTime() ?? 0;
+        const bTime = b.checkInTime?.getTime() ?? 0;
+        return aTime - bTime;
+      })
       .slice(0, 3);
   }
 
   exportFile(members: any[]) {
     try {
       const doc = new jsPDF();
-      doc.setFontSize(12); //this sets the font size for the document
+      doc.setFontSize(12);
       doc.text("Members List", 14, 22);
 
       const tableColumn = [
@@ -119,25 +119,25 @@ export class AppServices {
       members.forEach((member) => {
         const attendanceRecords = member.attendanceRecords || [];
         const presentCount = attendanceRecords.filter(
-          (record: any) => record.status === "present"
+          (record: any) => record.status === "present" || record.status === "PRESENT"
         ).length;
         const lateCount = attendanceRecords.filter(
-          (record: any) => record.status === "late"
+          (record: any) => record.status === "late" || record.status === "LATE"
         ).length;
         const attendanceRate =
           attendanceRecords.length > 0
             ? (
-                ((presentCount + lateCount) / attendanceRecords.length) *
-                100
-              ).toFixed(2)
+              ((presentCount + lateCount) / attendanceRecords.length) *
+              100
+            ).toFixed(2)
             : "0.00";
         const memberData = [
-          member.user.name,
-          member.user.email,
-          member.user.role,
+          member.user?.name ?? member.name,
+          member.user?.email ?? member.email,
+          member.user?.role ?? member.role,
           member.department ?? "General",
           member.id,
-          member.guardianPhone ?? "N/A",
+          member.phone ?? member.guardianPhone ?? "N/A",
           `${attendanceRate}%`,
         ];
         tableRows.push(memberData);

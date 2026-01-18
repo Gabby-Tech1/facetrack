@@ -1,14 +1,18 @@
-import type { MemberInterface } from "./members.interface";
-import type { SessionInterface } from "./session.interface";
+export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED" | "CHECKED_IN";
 
 export interface AttendanceInterface {
-  members?: MemberInterface[];
-  date: Date;
-  timeOfArrival: Date;
-  timeOfDeparture?: Date;
-  status: "present" | "absent" | "late";
-  sessionId?: string;
-  memberId?: string;
   id: string;
-  session: SessionInterface;
+  sessionId: string;
+  sessionName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  date: Date;
+  checkInTime?: Date;
+  checkOutTime?: Date;
+  status: AttendanceStatus;
+  confidenceScore?: number; // face recognition confidence
+  source: "kiosk" | "mobile" | "admin";
+  courseName?: string;
+  courseCode?: string;
 }
