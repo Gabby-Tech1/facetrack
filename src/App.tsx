@@ -12,17 +12,17 @@ import { SidebarProvider } from "./contexts/SidebarContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // Pages
-import Login from "./pages/auth/Login.tsx";
-import Signup from "./pages/auth/Signup.tsx";
-import Dashboard from "./pages/dashboard/Dashboard.tsx";
-import Sessions from "./pages/sessions/Sessions.tsx";
-import Courses from "./pages/courses/Courses.tsx";
-import Attendance from "./pages/attendance/Attendance.tsx";
-import Users from "./pages/users/Users.tsx";
-import Analytics from "./pages/analytics/Analytics.tsx";
-import Earnings from "./pages/earnings/Earnings.tsx";
-import Profile from "./pages/profile/Profile.tsx";
-import Settings from "./pages/settings/Settings.tsx";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import Dashboard from "./pages/dashboard/Dashboard";
+import Sessions from "./pages/sessions/Sessions";
+import Courses from "./pages/courses/Courses";
+import Attendance from "./pages/attendance/Attendance";
+import Users from "./pages/users/Users";
+import Analytics from "./pages/analytics/Analytics";
+import Earnings from "./pages/earnings/Earnings";
+import Profile from "./pages/profile/Profile";
+import Settings from "./pages/settings/Settings";
 
 const App: React.FC = () => {
   return (
