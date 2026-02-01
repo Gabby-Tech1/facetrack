@@ -69,6 +69,7 @@ const Sessions: React.FC = () => {
     const isRep = user?.role === Role.REP;
     const isStudent = user?.role === Role.STUDENT;
 
+
     const fetchSessions = async () => {
         if (isStudent) {
             try {
@@ -736,7 +737,7 @@ const Sessions: React.FC = () => {
                             </div>
                             <p className="text-sm text-slate-600 dark:text-slate-400">{selectedSession.course?.title || "No course assigned"}</p>
                         </div>
-                        {selectedSession.status === SessionStatus.OPEN && isSessionCreator(selectedSession) && (
+                        {selectedSession.status === SessionStatus.OPEN && canManageSession(selectedSession) && (
                             <div className="p-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-700/30 rounded-xl">
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Session Token</p>
                                 <p className="text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-400">{selectedSession.token}</p>

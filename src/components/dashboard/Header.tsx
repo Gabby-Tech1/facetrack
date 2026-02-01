@@ -70,7 +70,7 @@ const Header: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400">{getRoleLabel()}</p>
           </div>
           <img
-            src={user?.faceImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3b82f6&color=fff`}
+            src={user?.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3b82f6&color=fff`}
             alt={user?.name || "User"}
             className="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
           />

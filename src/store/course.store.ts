@@ -37,10 +37,10 @@ export const useCourseStore = create<CourseState>()((set, get) => ({
   // Fetch all courses
   fetchAllCourses: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await coursesApi.getAllCourses();
-      set({ courses: response.courses, isLoading: false });
+      set({ courses: response.data, isLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch courses";
       set({ isLoading: false, error: errorMessage });
@@ -50,13 +50,13 @@ export const useCourseStore = create<CourseState>()((set, get) => ({
   // Add course
   addCourse: async (data: CreateCourseDto) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await coursesApi.addCourse(data);
       // Refresh courses list
       await get().fetchAllCourses();
       set({ isLoading: false });
-      return { success: true, course: response.course };
+      return { success: true, course: response.data };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to add course";
       set({ isLoading: false, error: errorMessage });
@@ -67,7 +67,7 @@ export const useCourseStore = create<CourseState>()((set, get) => ({
   // Update course
   updateCourse: async (courseId: string, data: UpdateCourseDto) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       await coursesApi.updateCourse(courseId, data);
       // Refresh courses list
@@ -84,7 +84,7 @@ export const useCourseStore = create<CourseState>()((set, get) => ({
   // Remove course
   removeCourse: async (courseId: string) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       await coursesApi.removeCourse(courseId);
       // Refresh courses list
@@ -101,7 +101,7 @@ export const useCourseStore = create<CourseState>()((set, get) => ({
   // Remove student from course
   removeStudentFromCourse: async (courseId: string, studentId: string) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       await coursesApi.removeStudentFromCourse(courseId, studentId);
       // Refresh courses list

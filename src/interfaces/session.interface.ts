@@ -1,7 +1,7 @@
 import type { AttendanceInterface } from "./attendance.interface";
 
-export type SessionType = "CLASS" | "EXAM" | "LAB" | "TUTORIAL" | "EVENT" | "WORKSHIFT";
-export type SessionMode = "CHECK_IN" | "CHECK_OUT";
+export type SessionType = "CLASS" | "EXAM" | "LAB" | "TUTORIAL" | "EVENT" | "WORKSHIFT" | "PRACTICAL" | "SEMINAR";
+export type SessionMode = "CHECK_IN" | "CHECK_OUT" | "CHECK_IN_OUT";
 export type SessionStatus = "OPEN" | "CLOSED" | "SCHEDULED";
 
 export interface SessionCreator {

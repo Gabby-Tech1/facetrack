@@ -598,6 +598,18 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ courses, onClose, onS
     }
   };
 
+  const stopCamera = React.useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+    setFaceValidation(null);
+    setAutoCaptureProgress(0);
+    autoCaptureStartTime.current = null;
+  }, [stream]);
+
+  // Capture photo from video stream
   const capturePhoto = React.useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -654,17 +666,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ courses, onClose, onS
       toast.success("Photo captured automatically!");
     }
   }, [showCamera, faceImage, faceValidation?.isValid, capturePhoto]);
-
-  const stopCamera = React.useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
-    setShowCamera(false);
-    setFaceValidation(null);
-    setAutoCaptureProgress(0);
-    autoCaptureStartTime.current = null;
-  }, [stream]);
 
   const clearImage = () => {
     setFaceImage(null);

@@ -19,7 +19,7 @@ import type { Course } from "../../types";
 import { toast } from "sonner";
 
 const StudentCourses: React.FC = () => {
-    const { user } = useAuthStore();
+    useAuthStore();
     const [courses, setCourses] = useState<Course[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");

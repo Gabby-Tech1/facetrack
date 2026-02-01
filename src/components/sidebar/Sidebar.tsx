@@ -187,7 +187,7 @@ const Sidebar: React.FC = () => {
           <div className={`mb-3 ${isCollapsed && !isOpen ? "text-center" : ""}`}>
             <div className="flex items-center gap-3">
               <img
-                src={user?.profilePicture}
+                src={user?.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3b82f6&color=fff`}
                 alt={user?.name}
                 className="w-10 h-10 rounded-lg object-cover shrink-0 border-2 border-white/30"
               />
