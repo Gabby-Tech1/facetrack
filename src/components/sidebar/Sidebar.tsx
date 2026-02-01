@@ -14,9 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Camera,
 } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../store/auth.store";
 import { useSidebar } from "../../contexts/SidebarContext";
+import { Role } from "../../types";
 
 interface NavItem {
   icon: React.ElementType;
@@ -26,7 +28,7 @@ interface NavItem {
 
 const Sidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, userRole, logout } = useAuth();
+  const { user, logout } = useAuthStore();
   const { isOpen, close } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,39 +46,64 @@ const Sidebar: React.FC = () => {
   const getNavItems = (): NavItem[] => {
     const commonItems: NavItem[] = [
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-      { icon: Calendar, label: "Sessions", path: "/sessions" },
-      { icon: BookOpen, label: "Courses", path: "/courses" },
-      { icon: ClipboardList, label: "Attendance", path: "/attendance" },
     ];
 
-    if (userRole === "student") {
-      return [...commonItems, { icon: User, label: "Profile", path: "/profile" }];
-    }
+    if (!user) return commonItems;
 
-    if (userRole === "lecturer") {
-      return [
-        ...commonItems,
-        { icon: DollarSign, label: "Earnings", path: "/earnings" },
-        { icon: User, label: "Profile", path: "/profile" },
-      ];
-    }
+    switch (user.role) {
+      case Role.STUDENT:
+      case Role.REP:
+        return [
+          ...commonItems,
+          { icon: BookOpen, label: "My Courses", path: "/my-courses" },
+          { icon: Calendar, label: "Sessions", path: "/sessions" },
+          { icon: Camera, label: "Mark Attendance", path: "/mark-attendance" },
+          { icon: ClipboardList, label: "Attendance History", path: "/attendance" },
+          { icon: User, label: "Profile", path: "/profile" },
+        ];
 
-    return [
-      ...commonItems,
-      { icon: Users, label: "Users", path: "/users" },
-      { icon: BarChart3, label: "Analytics", path: "/analytics" },
-      { icon: Settings, label: "Settings", path: "/settings" },
-      { icon: User, label: "Profile", path: "/profile" },
-    ];
+      case Role.LECTURER:
+        return [
+          ...commonItems,
+          { icon: Calendar, label: "Sessions", path: "/sessions" },
+          { icon: BookOpen, label: "Courses", path: "/courses" },
+          { icon: Camera, label: "Mark Attendance", path: "/mark-attendance" },
+          { icon: ClipboardList, label: "Attendance History", path: "/attendance" },
+          { icon: DollarSign, label: "Earnings", path: "/earnings" },
+          { icon: User, label: "Profile", path: "/profile" },
+        ];
+
+      case Role.STAFF:
+      case Role.ADMIN:
+      case Role.SYSTEM_ADMIN:
+        return [
+          ...commonItems,
+          { icon: Calendar, label: "Sessions", path: "/sessions" },
+          { icon: BookOpen, label: "Courses", path: "/courses" },
+          { icon: Users, label: "Users", path: "/users" },
+          { icon: ClipboardList, label: "Attendance", path: "/attendance" },
+          { icon: BarChart3, label: "Analytics", path: "/analytics" },
+          { icon: Settings, label: "Settings", path: "/settings" },
+          { icon: User, label: "Profile", path: "/profile" },
+        ];
+
+      default:
+        return [...commonItems, { icon: User, label: "Profile", path: "/profile" }];
+    }
   };
 
   const navItems = getNavItems();
 
   const getRoleBadge = () => {
-    switch (userRole) {
-      case "student": return { label: "Student", color: "bg-green-600" };
-      case "lecturer": return { label: "Lecturer", color: "bg-purple-600" };
-      case "system_admin": return { label: "Admin", color: "bg-white/20 dark:bg-blue-600" };
+    if (!user) return { label: "User", color: "bg-slate-600" };
+
+    switch (user.role) {
+      case Role.STUDENT: return { label: "Student", color: "bg-green-600" };
+      case Role.REP: return { label: "Class Rep", color: "bg-emerald-600" };
+      case Role.LECTURER: return { label: "Lecturer", color: "bg-purple-600" };
+      case Role.STAFF: return { label: "Staff", color: "bg-orange-600" };
+      case Role.ADMIN: return { label: "Admin", color: "bg-blue-600" };
+      case Role.SYSTEM_ADMIN: return { label: "System Admin", color: "bg-white/20 dark:bg-blue-600" };
       default: return { label: "User", color: "bg-slate-600" };
     }
   };
@@ -142,8 +169,8 @@ const Sidebar: React.FC = () => {
                 to={item.path}
                 onClick={handleNavClick}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive
-                    ? "bg-white/20 dark:bg-blue-600 text-white"
-                    : "text-white/80 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-slate-700 hover:text-white"
+                  ? "bg-white/20 dark:bg-blue-600 text-white"
+                  : "text-white/80 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-slate-700 hover:text-white"
                   }`}
               >
                 <item.icon size={20} className="shrink-0" />

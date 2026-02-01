@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@radix-ui/themes";
 import {
     BookOpen,
@@ -9,38 +9,64 @@ import {
     XCircle,
     ArrowRight,
     AlertCircle,
+    Camera,
+    Loader2,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Header from "../../components/dashboard/Header";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../store/auth.store";
 import { useData } from "../../contexts/DataContext";
-import type { Student } from "../../interfaces/user.interface";
+import { coursesApi } from "../../api/courses.api";
 import FaceScannerModal from "../../components/attendance/FaceScannerModal";
+import EnrollmentModal from "../../components/enrollment/EnrollmentModal";
 import Drawer from "../../components/ui/Drawer";
-import type { Course } from "../../interfaces/course.interface";
+import type { Course } from "../../types";
 import { toast } from "sonner";
+import { ImageStatus } from "../../types";
 
 const StudentDashboard: React.FC = () => {
-    const { user } = useAuth();
-    const { addAttendanceRecord, sessions, courses, attendance } = useData();
-    const student = user as Student;
-    const [showScanner, setShowScanner] = React.useState(false);
-    const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(null);
-    const [showDrawer, setShowDrawer] = React.useState(false);
-    // Find the current open session for this student
-    const currentSession = sessions.find(s =>
-        s.status === "OPEN" &&
-        student.enrolledCourses.includes(s.courseId)
-    );
+    const { user } = useAuthStore();
+    const { addAttendanceRecord, sessions, attendance } = useData();
+    const navigate = useNavigate();
+    const [showScanner, setShowScanner] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+    const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+    const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+    const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+    
+    // Fetch enrolled courses from backend
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setIsLoadingCourses(true);
+                const response = await coursesApi.getAllCourses();
+                if (response.success && response.data) {
+                    setEnrolledCourses(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch courses:", error);
+                toast.error("Failed to load enrolled courses");
+            } finally {
+                setIsLoadingCourses(false);
+            }
+        };
+
+        fetchCourses();
+    }, []);
+    
+    // Find the current open session for this student (will be filtered by enrolled courses when API integrated)
+    const currentSession = sessions.find(s => s.status === "OPEN");
 
     const handleAttendanceVerify = async () => {
-        if (!currentSession) return;
+        if (!currentSession || !user) return;
 
         addAttendanceRecord({
             sessionId: currentSession.id,
-            userId: student.id,
-            userName: student.name,
-            userEmail: student.email,
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
             date: new Date(),
             status: "PRESENT",
             checkInTime: new Date(),
@@ -53,11 +79,8 @@ const StudentDashboard: React.FC = () => {
         setShowScanner(false);
     };
 
-    // Derived Data from Context
-    const enrolledCourses = courses.filter(c => student.enrolledCourses.includes(c.id));
-
     // Get student's attendance records
-    const myAttendance = attendance.filter(a => a.userId === student.id);
+    const myAttendance = attendance.filter(a => a.userId === user?.id);
     const recentAttendance = [...myAttendance]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
@@ -81,8 +104,7 @@ const StudentDashboard: React.FC = () => {
     const upcomingSessions = sessions
         .filter(
             (session) =>
-                student.enrolledCourses.includes(session.courseId) &&
-                (session.status === "OPEN" || session.status === "SCHEDULED")
+                session.status === "OPEN" || session.status === "SCHEDULED"
         )
         .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
         .slice(0, 3);
@@ -104,13 +126,39 @@ const StudentDashboard: React.FC = () => {
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="text-3xl">👋</span>
                                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                                    Welcome back, {student.name.split(" ")[0]}
+                                    Welcome back, {user?.name?.split(" ")[0] || "Student"}
                                 </h1>
                             </div>
                             <p className="text-slate-500 dark:text-slate-400 text-lg">
                                 Track your classes, monitor attendance, and stay on top of your academic journey.
                             </p>
                         </div>
+
+                        {/* Enrollment Banner - Show when not enrolled */}
+                        {(!user?.imageStatus || user.imageStatus === ImageStatus.PENDING) && (
+                            <div className="mb-8 p-6 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl shadow-lg shadow-orange-500/20">
+                                <div className="flex flex-col sm:flex-row items-center gap-4">
+                                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                                        <Camera className="w-7 h-7 text-white" />
+                                    </div>
+                                    <div className="flex-1 text-center sm:text-left">
+                                        <h3 className="text-xl font-bold text-white mb-1">
+                                            Complete Your Enrollment
+                                        </h3>
+                                        <p className="text-amber-100">
+                                            Upload your face image to enable attendance verification
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowEnrollmentModal(true)}
+                                        className="px-6 py-3 bg-white text-amber-600 font-semibold rounded-xl hover:bg-amber-50 transition-colors flex items-center gap-2 shadow-lg"
+                                    >
+                                        Enroll Now
+                                        <ArrowRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Attendance Overview Banner */}
                         <div className="mb-8 p-6 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg shadow-blue-600/10">
@@ -189,41 +237,62 @@ const StudentDashboard: React.FC = () => {
                                         </div>
                                         <div>
                                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">My Courses</h2>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">{enrolledCourses.length} enrolled</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                                {isLoadingCourses ? "Loading..." : `${enrolledCourses.length} enrolled`}
+                                            </p>
                                         </div>
                                     </div>
-                                    <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+                                    <button 
+                                        onClick={() => navigate("/my-courses")}
+                                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                                    >
                                         View All
                                     </button>
                                 </div>
                                 <div className="space-y-3">
-                                    {enrolledCourses.map((course) => (
-                                        <div
-                                            key={course.id}
-                                            onClick={() => { setSelectedCourse(course); setShowDrawer(true); }}
-                                            className="group flex items-center justify-between p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-200 cursor-pointer shadow-sm dark:shadow-none"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-600/20 rounded-xl flex items-center justify-center">
-                                                    <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">{course.code.slice(0, 3)}</span>
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                        {course.name}
-                                                    </h3>
-                                                    <p className="text-sm text-slate-500">
-                                                        {course.lecturerName} • {course.department}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-full">
-                                                    {course.code}
-                                                </span>
-                                                <ArrowRight size={18} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
-                                            </div>
+                                    {isLoadingCourses ? (
+                                        <div className="flex items-center justify-center py-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
                                         </div>
-                                    ))}
+                                    ) : enrolledCourses.length === 0 ? (
+                                        <div className="p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-center shadow-sm dark:shadow-none">
+                                            <BookOpen size={32} className="mx-auto text-slate-400 dark:text-slate-600 mb-3" />
+                                            <p className="text-slate-500 dark:text-slate-400 mb-2">No courses enrolled yet</p>
+                                            <p className="text-sm text-slate-400">Complete your enrollment to get started</p>
+                                        </div>
+                                    ) : (
+                                        enrolledCourses.slice(0, 4).map((course) => {
+                                            // Get primary lecturer name
+                                            const primaryLecturer = course.lecturers?.[0]?.lecturer?.user?.name || "TBA";
+                                            return (
+                                                <div
+                                                    key={course.id}
+                                                    onClick={() => { setSelectedCourse(course); setShowDrawer(true); }}
+                                                    className="group flex items-center justify-between p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-200 cursor-pointer shadow-sm dark:shadow-none"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-600/20 rounded-xl flex items-center justify-center">
+                                                            <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">{course.code.slice(0, 3)}</span>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                {course.title}
+                                                            </h3>
+                                                            <p className="text-sm text-slate-500">
+                                                                {primaryLecturer}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-full">
+                                                            {course.code}
+                                                        </span>
+                                                        <ArrowRight size={18} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </div>
                             </div>
 
@@ -353,7 +422,7 @@ const StudentDashboard: React.FC = () => {
                     <div className="space-y-6">
                         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl">
                             <div className="flex items-start justify-between mb-2">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedCourse.name}</h3>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedCourse.title}</h3>
                                 <span className="px-2 py-1 bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-xs font-bold rounded border border-blue-100 dark:border-blue-700">
                                     {selectedCourse.code}
                                 </span>
@@ -363,25 +432,34 @@ const StudentDashboard: React.FC = () => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
                                     <p className="text-xs text-slate-500 mb-1">Lecturer</p>
-                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{selectedCourse.lecturerName}</p>
+                                    <p className="font-medium text-slate-900 dark:text-white text-sm">
+                                        {selectedCourse.lecturers?.[0]?.lecturer?.user?.name || "TBA"}
+                                    </p>
                                 </div>
                                 <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
-                                    <p className="text-xs text-slate-500 mb-1">Department</p>
-                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{selectedCourse.department || "N/A"}</p>
+                                    <p className="text-xs text-slate-500 mb-1">Credit Hours</p>
+                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{selectedCourse.creditHours || "N/A"}</p>
                                 </div>
                                 <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
                                     <p className="text-xs text-slate-500 mb-1">Enrolled</p>
-                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{selectedCourse.enrolledStudents.length} Students</p>
+                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{selectedCourse.enrollments?.length || 0} Students</p>
                                 </div>
                                 <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
-                                    <p className="text-xs text-slate-500 mb-1">Created</p>
-                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{new Date(selectedCourse.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-xs text-slate-500 mb-1">Sessions</p>
+                                    <p className="font-medium text-slate-900 dark:text-white text-sm">{selectedCourse.sessions?.length || 0} Total</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
             </Drawer>
+
+            {/* Enrollment Modal */}
+            <EnrollmentModal 
+                isOpen={showEnrollmentModal} 
+                onClose={() => setShowEnrollmentModal(false)}
+                onSuccess={() => toast.success("Enrollment completed!")}
+            />
         </div >
     );
 };

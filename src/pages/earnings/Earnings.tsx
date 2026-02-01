@@ -11,25 +11,29 @@ import {
 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Header from "../../components/dashboard/Header";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../store/auth.store";
 import { useData } from "../../contexts/DataContext";
-import type { Lecturer } from "../../interfaces/user.interface"; // Added import
 import { toast } from "sonner";
+import { Role } from "../../types";
 
 const Earnings: React.FC = () => {
-    const { user } = useAuth();
+    const { user } = useAuthStore();
     const { sessions, updateLecturer } = useData();
-    const lecturer = user as Lecturer;
+    const lecturer = user?.lecturer as any;
+
+    if (!user || !lecturer) {
+        return <div className="p-8 text-center text-slate-500">Loading or Access Denied</div>;
+    }
 
     const [showPaymentModal, setShowPaymentModal] = React.useState(false);
     const [paymentForm, setPaymentForm] = React.useState({
-        provider: lecturer.paymentDetails?.provider || "MTN",
-        accountName: lecturer.paymentDetails?.accountName || lecturer.name,
-        accountNumber: lecturer.paymentDetails?.accountNumber || ""
+        provider: "MTN",
+        accountName: user?.name || "",
+        accountNumber: ""
     });
 
     // Filter sessions for this lecturer
-    const mySessions = sessions.filter(s => s.creator.id === lecturer.id);
+    const mySessions = sessions.filter(s => s.creator.id === user?.id);
     const completedSessions = mySessions.filter((s) => s.status === "CLOSED");
 
     // Calculate stats
@@ -224,7 +228,7 @@ const Earnings: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        if (lecturer.role === "lecturer") {
+                                        if (user.role === Role.LECTURER) {
                                             updateLecturer(lecturer.id, {
                                                 paymentDetails: {
                                                     provider: paymentForm.provider as any,

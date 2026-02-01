@@ -1,23 +1,65 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@radix-ui/themes";
-import { Users, BookOpen, Calendar, Activity, Shield, AlertTriangle, CheckCircle, BarChart3 } from "lucide-react";
+import { Users, BookOpen, Calendar, Activity, Shield, AlertTriangle, CheckCircle, BarChart3, Plus, ArrowRight, Loader2 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Header from "../../components/dashboard/Header";
-import { useAuth } from "../../contexts/AuthContext";
-import { students, lecturers, systemAdmins } from "../../data/users";
-import { courses } from "../../data/courses";
-import { mockSessions } from "../../data/sessions";
-import { mockAttendance } from "../../data/attendance";
+import { useAuthStore } from "../../store/auth.store";
+import { usersApi } from "../../api/users.api";
+import { coursesApi } from "../../api/courses.api";
+import { sessionsApi } from "../../api/sessions.api";
+import { Role } from "../../types";
+import type { User, Course, Session } from "../../types";
 
 const AdminDashboard: React.FC = () => {
-    useAuth();
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const [users, setUsers] = useState<User[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [sessions, setSessions] = useState<Session[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const totalAttendance = mockAttendance.length;
-    const presentCount = mockAttendance.filter((a) => a.status === "PRESENT").length;
-    const lateCount = mockAttendance.filter((a) => a.status === "LATE").length;
-    const absentCount = mockAttendance.filter((a) => a.status === "ABSENT").length;
-    const attendanceRate = totalAttendance > 0 ? Math.round(((presentCount + lateCount) / totalAttendance) * 100) : 0;
-    const activeSessions = mockSessions.filter((s) => s.status === "OPEN").length;
+    useEffect(() => {
+        let isCancelled = false;
+        
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const [usersRes, coursesRes, sessionsRes] = await Promise.all([
+                    usersApi.getAllUsers(),
+                    coursesApi.getAllCourses(),
+                    sessionsApi.getAllSessionsAdmin().catch(() => ({ sessions: [] })),
+                ]);
+                
+                if (!isCancelled) {
+                    setUsers(usersRes.users || []);
+                    setCourses(coursesRes.courses || []);
+                    setSessions(sessionsRes.sessions || []);
+                }
+            } catch (error) {
+                if (!isCancelled) {
+                    console.error("Failed to fetch dashboard data:", error);
+                }
+            } finally {
+                if (!isCancelled) {
+                    setIsLoading(false);
+                }
+            }
+        };
+        fetchData();
+        
+        return () => {
+            isCancelled = true;
+        };
+    }, []);
+
+    // Stats calculations
+    const totalUsers = users.length;
+    const studentCount = users.filter((u) => u.role === Role.STUDENT || u.role === Role.REP).length;
+    const lecturerCount = users.filter((u) => u.role === Role.LECTURER).length;
+    const staffCount = users.filter((u) => u.role === Role.STAFF).length;
+    const adminCount = users.filter((u) => u.role === Role.ADMIN || u.role === Role.SYSTEM_ADMIN).length;
+    const activeSessions = sessions.filter((s) => s.status === "OPEN").length;
 
     return (
         <div className="flex h-screen bg-slate-100 dark:bg-slate-950">
@@ -27,57 +69,70 @@ const AdminDashboard: React.FC = () => {
                 <ScrollArea type="auto" className="flex-1">
                     <div className="px-4 sm:px-8 pb-8">
                         {/* Welcome */}
-                        <div className="mb-8">
-                            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">System Admin Dashboard</h1>
-                            <p className="text-slate-500 dark:text-slate-400 mt-1">Overview of system health and user activity</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                            <div>
+                                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">System Admin Dashboard</h1>
+                                <p className="text-slate-500 dark:text-slate-400 mt-1">Overview of system health and user activity</p>
+                            </div>
+                            <button
+                                onClick={() => navigate("/users")}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Add User
+                            </button>
                         </div>
 
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-20">
+                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                            </div>
+                        ) : (
+                        <>
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                            <StatCard icon={Users} label="Total Users" value={students.length + lecturers.length + systemAdmins.length} bgColor="bg-blue-600" />
-                            <StatCard icon={Users} label="Students" value={students.length} bgColor="bg-green-600" />
-                            <StatCard icon={Users} label="Lecturers" value={lecturers.length} bgColor="bg-purple-600" />
+                            <StatCard icon={Users} label="Total Users" value={totalUsers} bgColor="bg-blue-600" />
+                            <StatCard icon={Users} label="Students" value={studentCount} bgColor="bg-green-600" />
+                            <StatCard icon={Users} label="Lecturers" value={lecturerCount} bgColor="bg-purple-600" />
                             <StatCard icon={BookOpen} label="Courses" value={courses.length} bgColor="bg-orange-600" />
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                            <StatCard icon={Calendar} label="Total Sessions" value={mockSessions.length} bgColor="bg-cyan-600" />
+                            <StatCard icon={Calendar} label="Total Sessions" value={sessions.length} bgColor="bg-cyan-600" />
                             <StatCard icon={Activity} label="Active Sessions" value={activeSessions} bgColor="bg-amber-600" />
-                            <StatCard icon={BarChart3} label="Attendance Rate" value={`${attendanceRate}%`} bgColor="bg-emerald-600" />
-                            <StatCard icon={Shield} label="System Admins" value={systemAdmins.length} bgColor="bg-rose-600" />
+                            <StatCard icon={Users} label="Staff" value={staffCount} bgColor="bg-emerald-600" />
+                            <StatCard icon={Shield} label="Admins" value={adminCount} bgColor="bg-rose-600" />
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            {/* Attendance Overview */}
+                            {/* Quick Actions */}
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Attendance Overview</h2>
-                                    <span className="text-xs text-slate-500">All time</span>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-4 mb-4">
-                                    <div className="text-center p-4 bg-green-100 dark:bg-green-700 rounded-lg">
-                                        <p className="text-2xl font-bold text-green-700 dark:text-white">{presentCount}</p>
-                                        <p className="text-xs text-green-600 dark:text-green-100">Present</p>
-                                    </div>
-                                    <div className="text-center p-4 bg-amber-100 dark:bg-amber-700 rounded-lg">
-                                        <p className="text-2xl font-bold text-amber-700 dark:text-white">{lateCount}</p>
-                                        <p className="text-xs text-amber-600 dark:text-amber-100">Late</p>
-                                    </div>
-                                    <div className="text-center p-4 bg-red-100 dark:bg-red-700 rounded-lg">
-                                        <p className="text-2xl font-bold text-red-700 dark:text-white">{absentCount}</p>
-                                        <p className="text-xs text-red-600 dark:text-red-100">Absent</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500 dark:text-slate-400">Attendance Rate</span>
-                                        <span className="text-slate-900 dark:text-white font-medium">{attendanceRate}%</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                        <div className="h-full bg-green-600 rounded-full" style={{ width: `${attendanceRate}%` }} />
-                                    </div>
+                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Actions</h2>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <QuickActionCard
+                                        icon={Users}
+                                        label="Manage Users"
+                                        onClick={() => navigate("/users")}
+                                        color="blue"
+                                    />
+                                    <QuickActionCard
+                                        icon={BookOpen}
+                                        label="Manage Courses"
+                                        onClick={() => navigate("/courses")}
+                                        color="purple"
+                                    />
+                                    <QuickActionCard
+                                        icon={Calendar}
+                                        label="View Sessions"
+                                        onClick={() => navigate("/sessions")}
+                                        color="amber"
+                                    />
+                                    <QuickActionCard
+                                        icon={BarChart3}
+                                        label="Analytics"
+                                        onClick={() => navigate("/analytics")}
+                                        color="emerald"
+                                    />
                                 </div>
                             </div>
 
@@ -88,46 +143,62 @@ const AdminDashboard: React.FC = () => {
                                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">System Status</h2>
                                 </div>
                                 <div className="space-y-1">
-                                    <StatusItem label="Face Recognition API" status="ok" detail="99.9% uptime" />
+                                    <StatusItem label="API Server" status="ok" detail="Online" />
                                     <StatusItem label="Database Connection" status="ok" detail="Active" />
-                                    <StatusItem label="Session Management" status="ok" detail="Running" />
-                                    <StatusItem label="Notification Service" status="warning" detail="3 pending" />
-                                    <StatusItem label="Backup Service" status="ok" detail="Last: 6h ago" />
+                                    <StatusItem label="Face Recognition" status="ok" detail="Ready" />
+                                    <StatusItem label="Background Jobs" status="ok" detail="Running" />
+                                    <StatusItem label="Storage" status="ok" detail="Available" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Courses Table */}
+                        {/* Recent Users Table */}
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
-                                    <BookOpen size={20} className="text-blue-500" />
-                                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">All Courses</h2>
+                                    <Users size={20} className="text-blue-500" />
+                                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Recent Users</h2>
                                 </div>
-                                <span className="text-sm text-slate-500">{courses.length} courses</span>
+                                <button
+                                    onClick={() => navigate("/users")}
+                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                >
+                                    View all <ArrowRight className="w-4 h-4" />
+                                </button>
                             </div>
 
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-left text-slate-500 dark:text-slate-400 text-sm border-b border-slate-200 dark:border-slate-700">
-                                            <th className="pb-3 font-medium">Code</th>
-                                            <th className="pb-3 font-medium">Course Name</th>
-                                            <th className="pb-3 font-medium">Lecturer</th>
-                                            <th className="pb-3 font-medium">Students</th>
-                                            <th className="pb-3 font-medium">Sessions</th>
+                                            <th className="pb-3 font-medium">Name</th>
+                                            <th className="pb-3 font-medium">Email</th>
+                                            <th className="pb-3 font-medium">Role</th>
+                                            <th className="pb-3 font-medium">Joined</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {courses.map((course) => (
-                                            <tr key={course.id} className="border-b border-slate-100 dark:border-slate-800">
+                                        {users.slice(0, 5).map((u) => (
+                                            <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800">
                                                 <td className="py-3">
-                                                    <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">{course.code}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <img
+                                                            src={u.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=3b82f6&color=fff&size=32`}
+                                                            alt={u.name}
+                                                            className="w-8 h-8 rounded-full object-cover"
+                                                        />
+                                                        <span className="text-slate-900 dark:text-white font-medium">{u.name}</span>
+                                                    </div>
                                                 </td>
-                                                <td className="py-3 text-slate-900 dark:text-white">{course.name}</td>
-                                                <td className="py-3 text-slate-500 dark:text-slate-400">{course.lecturerName}</td>
-                                                <td className="py-3 text-slate-500 dark:text-slate-400">{course.enrolledStudents.length}</td>
-                                                <td className="py-3 text-slate-500 dark:text-slate-400">{course.totalSessions}</td>
+                                                <td className="py-3 text-slate-500 dark:text-slate-400">{u.email}</td>
+                                                <td className="py-3">
+                                                    <span className={`px-2 py-1 text-xs font-medium rounded ${getRoleBadgeColor(u.role)}`}>
+                                                        {u.role}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 text-slate-500 dark:text-slate-400">
+                                                    {new Date(u.createdAt).toLocaleDateString()}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -136,17 +207,19 @@ const AdminDashboard: React.FC = () => {
                         </div>
 
                         {/* System Alert */}
-                        <div className="mt-6 bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-700 rounded-xl p-5">
+                        <div className="mt-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-xl p-5">
                             <div className="flex items-start gap-3">
-                                <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400 mt-0.5" />
+                                <CheckCircle size={20} className="text-blue-600 dark:text-blue-400 mt-0.5" />
                                 <div>
-                                    <h3 className="text-amber-900 dark:text-white font-medium">System Notice</h3>
-                                    <p className="text-sm text-amber-700 dark:text-amber-200 mt-1">
-                                        Scheduled maintenance window: Sunday 2:00 AM - 4:00 AM UTC. Some features may be temporarily unavailable.
+                                    <h3 className="text-blue-900 dark:text-white font-medium">System Running Normally</h3>
+                                    <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">
+                                        All services are operational. {totalUsers} users registered, {courses.length} courses available.
                                     </p>
                                 </div>
                             </div>
                         </div>
+                        </>
+                        )}
                     </div>
                 </ScrollArea>
             </div>
@@ -155,6 +228,25 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
+
+const getRoleBadgeColor = (role: Role) => {
+    switch (role) {
+        case Role.STUDENT:
+            return "bg-emerald-100 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400";
+        case Role.REP:
+            return "bg-green-100 dark:bg-green-600/20 text-green-700 dark:text-green-400";
+        case Role.LECTURER:
+            return "bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400";
+        case Role.STAFF:
+            return "bg-orange-100 dark:bg-orange-600/20 text-orange-700 dark:text-orange-400";
+        case Role.ADMIN:
+            return "bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400";
+        case Role.SYSTEM_ADMIN:
+            return "bg-indigo-100 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-400";
+        default:
+            return "bg-slate-100 dark:bg-slate-600/20 text-slate-700 dark:text-slate-400";
+    }
+};
 
 const StatCard = ({ icon: Icon, label, value, bgColor }: { icon: React.ElementType; label: string; value: string | number; bgColor: string }) => (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm dark:shadow-none">
@@ -175,3 +267,29 @@ const StatusItem = ({ label, status, detail }: { label: string; status: "ok" | "
         <span className="text-sm text-slate-500">{detail}</span>
     </div>
 );
+
+interface QuickActionCardProps {
+    icon: React.ElementType;
+    label: string;
+    onClick: () => void;
+    color: "blue" | "purple" | "amber" | "emerald";
+}
+
+const QuickActionCard: React.FC<QuickActionCardProps> = ({ icon: Icon, label, onClick, color }) => {
+    const colorClasses = {
+        blue: "bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-600/20",
+        purple: "bg-purple-50 dark:bg-purple-600/10 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-600/20",
+        amber: "bg-amber-50 dark:bg-amber-600/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-600/20",
+        emerald: "bg-emerald-50 dark:bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-600/20",
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            className={`p-4 rounded-xl flex items-center gap-3 transition-colors ${colorClasses[color]}`}
+        >
+            <Icon className="w-5 h-5" />
+            <span className="font-medium text-sm">{label}</span>
+        </button>
+    );
+};

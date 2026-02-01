@@ -1,26 +1,27 @@
 import React, { useState } from "react";
 import { ScrollArea } from "@radix-ui/themes";
-import { Mail, Phone, Building2, Calendar, Shield, Camera, Edit, X, Save, BookOpen, DollarSign, Users, Check } from "lucide-react";
+import { Mail, Phone, Calendar, Shield, Camera, Edit, X, Save, BookOpen, DollarSign, Users, Check, Loader2, AlertCircle } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Header from "../../components/dashboard/Header";
-import { useAuth } from "../../contexts/AuthContext";
-import { useData } from "../../contexts/DataContext";
+import { useAuthStore } from "../../store/auth.store";
+import { usersApi } from "../../api/users.api";
 import { toast } from "sonner";
-import type { Student, Lecturer, SystemAdmin } from "../../interfaces/user.interface";
+import { Role, ImageStatus } from "../../types";
+import EnrollmentModal from "../../components/enrollment/EnrollmentModal";
 
 const Profile: React.FC = () => {
-    const { user, userRole } = useAuth();
-    const { updateStudent, updateLecturer, updateAdmin } = useData();
+    const { user, fetchCurrentUser } = useAuthStore();
     const [showEditModal, setShowEditModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [show2FAModal, setShow2FAModal] = useState(false);
+    const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Edit form state
     const [editForm, setEditForm] = useState({
         name: user?.name || "",
         phone: user?.phone || "",
-        department: user?.department || "",
     });
 
     // Password form state
@@ -33,26 +34,53 @@ const Profile: React.FC = () => {
     if (!user) return null;
 
     const getRoleLabel = () => {
-        switch (userRole) {
-            case "student": return "Student";
-            case "lecturer": return "Lecturer";
-            case "system_admin": return "System Administrator";
+        switch (user.role) {
+            case Role.STUDENT: return "Student";
+            case Role.REP: return "Class Representative";
+            case Role.LECTURER: return "Lecturer";
+            case Role.STAFF: return "Staff";
+            case Role.ADMIN: return "Administrator";
+            case Role.SYSTEM_ADMIN: return "System Administrator";
             default: return "User";
         }
     };
 
     const getRoleBadgeColor = () => {
-        switch (userRole) {
-            case "student": return "bg-emerald-600";
-            case "lecturer": return "bg-purple-600";
-            case "system_admin": return "bg-blue-600";
+        switch (user.role) {
+            case Role.STUDENT: return "bg-emerald-600";
+            case Role.REP: return "bg-green-600";
+            case Role.LECTURER: return "bg-purple-600";
+            case Role.STAFF: return "bg-orange-600";
+            case Role.ADMIN: return "bg-blue-600";
+            case Role.SYSTEM_ADMIN: return "bg-indigo-600";
             default: return "bg-slate-600";
         }
     };
 
-    const handleSaveProfile = () => {
-        toast.success("Profile updated successfully!");
-        setShowEditModal(false);
+    const handleSaveProfile = async () => {
+        if (!editForm.name.trim()) {
+            toast.error("Name is required");
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            await usersApi.updateUserDetails({
+                name: editForm.name.trim(),
+                phone: editForm.phone.trim(),
+            });
+
+            // Refresh user data from backend
+            await fetchCurrentUser();
+
+            toast.success("Profile updated successfully!");
+            setShowEditModal(false);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
+            toast.error(errorMessage);
+        } finally {
+            setIsUpdating(false);
+        }
     };
 
     const handleChangePassword = () => {
@@ -78,7 +106,7 @@ const Profile: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -87,40 +115,51 @@ const Profile: React.FC = () => {
             return;
         }
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64String = reader.result as string;
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast.error("Please select an image file");
+            return;
+        }
 
-            // Update based on role
-            if (userRole === "student") {
-                updateStudent(user.id, { profilePicture: base64String });
-            } else if (userRole === "lecturer") {
-                updateLecturer(user.id, { profilePicture: base64String });
-            } else if (userRole === "system_admin") {
-                updateAdmin(user.id, { profilePicture: base64String });
+        setIsUpdating(true);
+        try {
+            // Use enroll API to upload face image - pass user's role
+            const response = await usersApi.enrollUser({ role: user.role }, file);
+
+            if (response.jobId) {
+                toast.success("Face image uploaded! Processing in background...");
+            } else {
+                toast.success("Profile picture updated!");
             }
 
-            toast.success("Profile picture updated!");
-        };
-        reader.readAsDataURL(file);
+            // Refresh user data from backend
+            await fetchCurrentUser();
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to upload image";
+            toast.error(errorMessage);
+        } finally {
+            setIsUpdating(false);
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
     };
 
     // Role-specific stats
     const getStats = () => {
-        if (userRole === "student") {
-            const s = user as Student;
+        if (user.role === Role.STUDENT || user.role === Role.REP) {
             return [
-                { label: "Courses Enrolled", value: s.enrolledCourses?.length || 0, icon: BookOpen },
-                { label: "Attendance Rate", value: `${s.attendanceRate || 0}%`, icon: Check },
-                { label: "Year Group", value: `Year ${s.yearGroup}`, icon: Users },
+                { label: "Courses Enrolled", value: user.student?._count?.enrollments || 0, icon: BookOpen },
+                { label: "Attendance Rate", value: "0%", icon: Check },
+                { label: "Status", value: user.role === Role.REP ? "Class Rep" : "Student", icon: Users },
             ];
         }
-        if (userRole === "lecturer") {
-            const l = user as Lecturer;
+        if (user.role === Role.LECTURER) {
             return [
-                { label: "Courses Assigned", value: l.assignedCourses?.length || 0, icon: BookOpen },
-                { label: "Hours Worked", value: l.totalHoursWorked || 0, icon: Calendar },
-                { label: "Total Earnings", value: `GH₵${(l.totalEarnings || 0).toLocaleString()}`, icon: DollarSign },
+                { label: "Courses Assigned", value: user.lecturer?._count?.courses || 0, icon: BookOpen },
+                { label: "Hours Worked", value: 0, icon: Calendar },
+                { label: "Total Earnings", value: "GH₵0", icon: DollarSign },
             ];
         }
         return [];
@@ -140,6 +179,31 @@ const Profile: React.FC = () => {
                             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">My Profile</h1>
                             <p className="text-slate-500 dark:text-slate-400">Manage your account and preferences</p>
                         </div>
+
+                        {/* Enrollment Banner for Students - Show when not enrolled */}
+                        {user.role === Role.STUDENT && (!user.imageStatus || user.imageStatus === ImageStatus.PENDING) && (
+                            <div className="mb-8 p-6 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl shadow-lg">
+                                <div className="flex flex-col sm:flex-row items-center gap-4">
+                                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                                        <AlertCircle className="w-7 h-7 text-white" />
+                                    </div>
+                                    <div className="flex-1 text-center sm:text-left">
+                                        <h3 className="text-xl font-bold text-white mb-1">
+                                            Complete Your Enrollment
+                                        </h3>
+                                        <p className="text-amber-100">
+                                            Upload your face image and select courses to enable attendance verification
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowEnrollmentModal(true)}
+                                        className="px-6 py-3 bg-white text-amber-600 font-semibold rounded-xl hover:bg-amber-50 transition-colors shadow-lg"
+                                    >
+                                        Enroll Now
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Stats Cards (for students/lecturers) */}
                         {stats.length > 0 && (
@@ -165,7 +229,11 @@ const Profile: React.FC = () => {
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm dark:shadow-none">
                                 <div className="flex flex-col items-center text-center">
                                     <div className="relative mb-4">
-                                        <img src={user.profilePicture} alt={user.name} className="w-28 h-28 rounded-xl object-cover border-2 border-slate-200 dark:border-slate-700" />
+                                        <img
+                                            src={user.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3b82f6&color=fff&size=112`}
+                                            alt={user.name}
+                                            className="w-28 h-28 rounded-xl object-cover border-2 border-slate-200 dark:border-slate-700"
+                                        />
                                         <button onClick={handlePhotoChange} className="absolute -bottom-2 -right-2 p-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg">
                                             <Camera size={14} className="text-white" />
                                         </button>
@@ -187,12 +255,9 @@ const Profile: React.FC = () => {
                                 <hr className="my-6 border-slate-200 dark:border-slate-800" />
 
                                 <div className="space-y-4">
-                                    <InfoRow icon={Building2} label="Department" value={user.department || "Not set"} />
                                     <InfoRow icon={Phone} label="Phone" value={user.phone || "Not set"} />
-                                    <InfoRow icon={Calendar} label="Joined" value={user.createdAt?.toLocaleDateString() || "N/A"} />
-                                    {userRole === "student" && <InfoRow icon={Users} label="Student ID" value={(user as Student).studentId} />}
-                                    {userRole === "lecturer" && <InfoRow icon={Users} label="Staff Number" value={(user as Lecturer).staffNumber} />}
-                                    {userRole === "system_admin" && <InfoRow icon={Shield} label="Admin ID" value={(user as SystemAdmin).adminNumber} />}
+                                    <InfoRow icon={Calendar} label="Joined" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"} />
+                                    <InfoRow icon={Shield} label="Account Status" value={user.accountStatus || "Active"} />
                                 </div>
                             </div>
 
@@ -202,7 +267,7 @@ const Profile: React.FC = () => {
                                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm dark:shadow-none">
                                     <div className="flex items-center justify-between mb-6">
                                         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Account Details</h2>
-                                        <button onClick={() => { setEditForm({ name: user.name, phone: user.phone || "", department: user.department || "" }); setShowEditModal(true); }}
+                                        <button onClick={() => { setEditForm({ name: user.name, phone: user.phone || "" }); setShowEditModal(true); }}
                                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                                             <Edit size={16} /> Edit Profile
                                         </button>
@@ -212,25 +277,37 @@ const Profile: React.FC = () => {
                                         <FieldDisplay label="Full Name" value={user.name} />
                                         <FieldDisplay label="Email Address" value={user.email} icon={<Mail size={16} className="text-slate-400" />} />
                                         <FieldDisplay label="Phone Number" value={user.phone || "Not set"} icon={<Phone size={16} className="text-slate-400" />} />
-                                        <FieldDisplay label="Department" value={user.department || "Not set"} icon={<Building2 size={16} className="text-slate-400" />} />
-                                        {userRole === "student" && (
-                                            <>
-                                                <FieldDisplay label="Student ID" value={(user as Student).studentId} />
-                                                <FieldDisplay label="Year Group" value={`Year ${(user as Student).yearGroup}`} />
-                                                <FieldDisplay label="Attendance Rate" value={`${(user as Student).attendanceRate}%`} />
-                                            </>
-                                        )}
-                                        {userRole === "lecturer" && (
-                                            <>
-                                                <FieldDisplay label="Staff Number" value={(user as Lecturer).staffNumber} />
-                                                <FieldDisplay label="Hourly Rate" value={`GH₵${(user as Lecturer).hourlyRate}`} />
-                                                <FieldDisplay label="Total Hours Worked" value={`${(user as Lecturer).totalHoursWorked}h`} />
-                                            </>
-                                        )}
-                                        {userRole === "system_admin" && (
-                                            <FieldDisplay label="Admin Number" value={(user as SystemAdmin).adminNumber} />
-                                        )}
+                                        <FieldDisplay label="Role" value={getRoleLabel()} icon={<Shield size={16} className="text-slate-400" />} />
+                                        <FieldDisplay label="Account Status" value={user.accountStatus || "Active"} />
+                                        <FieldDisplay label="Email Verified" value={user.isActive ? "Yes" : "No"} />
                                     </div>
+
+                                    {(user.role === Role.STUDENT || user.role === Role.REP) && (
+                                        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                                    <BookOpen size={18} className="text-blue-500" /> Enrolled Courses
+                                                </h3>
+                                                <button
+                                                    onClick={() => setShowEnrollmentModal(true)}
+                                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                                >
+                                                    Manage Courses
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {user.student?.enrollments && user.student.enrollments.length > 0 ? (
+                                                    user.student.enrollments.map((enr: any) => (
+                                                        <span key={enr.id} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                                            {enr.course?.code}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-sm text-slate-500 italic">No courses enrolled yet</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Security Section */}
@@ -239,7 +316,7 @@ const Profile: React.FC = () => {
                                         <Shield size={18} className="text-blue-500 dark:text-blue-400" /> Security
                                     </h2>
                                     <div className="space-y-4">
-                                        <SecurityItem label="Password" detail="Last changed 30 days ago" buttonText="Change" onClick={() => setShowPasswordModal(true)} />
+                                        <SecurityItem label="Password" detail={user.isPasswordChanged ? "Password has been changed" : "Using initial password"} buttonText="Change" onClick={() => setShowPasswordModal(true)} />
                                         <SecurityItem label="Two-Factor Authentication" detail="Not enabled" buttonText="Enable" onClick={() => setShow2FAModal(true)} highlight />
                                         <SecurityItem label="Active Sessions" detail="1 active session" buttonText="Manage" onClick={() => toast.info("Session management coming soon!")} />
                                     </div>
@@ -252,28 +329,26 @@ const Profile: React.FC = () => {
 
             {/* Edit Profile Modal */}
             {showEditModal && (
-                <Modal title="Edit Profile" onClose={() => setShowEditModal(false)}>
+                <Modal title="Edit Profile" onClose={() => !isUpdating && setShowEditModal(false)}>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm text-slate-500 dark:text-slate-400 mb-2">Full Name</label>
                             <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white" />
+                                disabled={isUpdating}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white disabled:opacity-50" />
                         </div>
                         <div>
                             <label className="block text-sm text-slate-500 dark:text-slate-400 mb-2">Phone Number</label>
                             <input type="text" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white" placeholder="+233..." />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-slate-500 dark:text-slate-400 mb-2">Department</label>
-                            <input type="text" value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white" />
+                                disabled={isUpdating}
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white disabled:opacity-50" placeholder="+233..." />
                         </div>
                     </div>
                     <div className="flex gap-3 mt-6">
-                        <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl">Cancel</button>
-                        <button onClick={handleSaveProfile} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
-                            <Save size={18} /> Save Changes
+                        <button onClick={() => setShowEditModal(false)} disabled={isUpdating} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl disabled:opacity-50">Cancel</button>
+                        <button onClick={handleSaveProfile} disabled={isUpdating} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+                            {isUpdating ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                            {isUpdating ? "Saving..." : "Save Changes"}
                         </button>
                     </div>
                 </Modal>
@@ -322,6 +397,13 @@ const Profile: React.FC = () => {
                     </div>
                 </Modal>
             )}
+
+            {/* Enrollment Modal for Students */}
+            <EnrollmentModal
+                isOpen={showEnrollmentModal}
+                onClose={() => setShowEnrollmentModal(false)}
+                onSuccess={() => toast.success("Enrollment completed successfully!")}
+            />
         </div>
     );
 };

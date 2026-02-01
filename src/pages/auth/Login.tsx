@@ -1,37 +1,34 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, LogIn, Mail, Lock, Scan } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
-import { demoCredentials } from "../../data/auth";
+import { useAuthStore } from "../../store/auth.store";
+import { toast } from "sonner";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isLoading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
-    try {
-      const success = await login(email, password);
-      if (success) navigate("/dashboard");
-      else setError("Invalid email or password");
-    } catch {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    clearError();
 
-  const handleQuickLogin = (email: string, password: string) => {
-    setEmail(email);
-    setPassword(password);
+    if (!email || !password) {
+      toast.error("Please enter email and password");
+      return;
+    }
+
+    const result = await login({ email, password });
+    
+    if (result.success) {
+      toast.success("Login successful!");
+      navigate("/dashboard");
+    } else {
+      toast.error(result.error || "Login failed");
+    }
   };
 
   return (
@@ -118,12 +115,30 @@ const Login: React.FC = () => {
               </div>
             )}
 
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
               className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-lg shadow-blue-600/20"
             >
-              {isLoading ? "Signing in..." : <><LogIn size={18} /> Sign In</>}
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} /> Sign In
+                </>
+              )}
             </button>
           </form>
 
@@ -133,36 +148,22 @@ const Login: React.FC = () => {
                 <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white dark:bg-slate-950 text-slate-500">Demo Accounts</span>
+                <span className="px-4 bg-white dark:bg-slate-950 text-slate-500">New student?</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mt-6">
-              <button
-                onClick={() => handleQuickLogin(demoCredentials[0].email, demoCredentials[0].password)}
-                className="py-3 bg-emerald-50 dark:bg-emerald-600/20 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium rounded-xl transition-colors border border-emerald-200 dark:border-emerald-600/30"
+            <div className="mt-6">
+              <Link
+                to="/signup"
+                className="w-full py-3 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-xl transition-colors border border-slate-200 dark:border-slate-800 flex items-center justify-center"
               >
-                Student
-              </button>
-              <button
-                onClick={() => handleQuickLogin(demoCredentials[1].email, demoCredentials[1].password)}
-                className="py-3 bg-purple-50 dark:bg-purple-600/20 hover:bg-purple-100 dark:hover:bg-purple-600/30 text-purple-700 dark:text-purple-400 text-sm font-medium rounded-xl transition-colors border border-purple-200 dark:border-purple-600/30"
-              >
-                Lecturer
-              </button>
-              <button
-                onClick={() => handleQuickLogin(demoCredentials[2].email, demoCredentials[2].password)}
-                className="py-3 bg-blue-50 dark:bg-blue-600/20 hover:bg-blue-100 dark:hover:bg-blue-600/30 text-blue-700 dark:text-blue-400 text-sm font-medium rounded-xl transition-colors border border-blue-200 dark:border-blue-600/30"
-              >
-                Admin
-              </button>
+                Create Student Account
+              </Link>
             </div>
           </div>
 
-          <p className="mt-8 text-center text-sm text-slate-500">
-            <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">Forgot password?</button>
-            <span className="mx-2">•</span>
-            <button key="signup-link" onClick={() => navigate("/signup")} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">Create an account</button>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+            Lecturers and staff accounts are created by administrators.
           </p>
         </div>
       </div>

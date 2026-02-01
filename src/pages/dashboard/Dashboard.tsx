@@ -1,23 +1,27 @@
 import React from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../store/auth.store";
+import { Role } from "../../types";
 import StudentDashboard from "./StudentDashboard";
 import LecturerDashboard from "./LecturerDashboard";
 import AdminDashboard from "./AdminDashboard";
 
 const Dashboard: React.FC = () => {
-  const { userRole, user } = useAuth();
+  const { user } = useAuthStore();
 
   if (!user) {
     return null;
   }
 
   // Route to role-specific dashboard
-  switch (userRole) {
-    case "student":
+  switch (user.role) {
+    case Role.STUDENT:
+    case Role.REP:
       return <StudentDashboard />;
-    case "lecturer":
+    case Role.LECTURER:
       return <LecturerDashboard />;
-    case "system_admin":
+    case Role.SYSTEM_ADMIN:
+    case Role.ADMIN:
+    case Role.STAFF:
       return <AdminDashboard />;
     default:
       return <StudentDashboard />;

@@ -1,19 +1,24 @@
 import React from "react";
 import { Search, Bell, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../store/auth.store";
 import { useSidebar } from "../../contexts/SidebarContext";
+import { Role } from "../../types";
 
 const Header: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const { user, userRole } = useAuth();
+  const { user } = useAuthStore();
   const { toggle } = useSidebar();
 
   const getRoleLabel = () => {
-    switch (userRole) {
-      case "student": return "Student";
-      case "lecturer": return "Lecturer";
-      case "system_admin": return "Admin";
+    if (!user) return "User";
+    switch (user.role) {
+      case Role.STUDENT: return "Student";
+      case Role.REP: return "Class Rep";
+      case Role.LECTURER: return "Lecturer";
+      case Role.STAFF: return "Staff";
+      case Role.ADMIN: return "Admin";
+      case Role.SYSTEM_ADMIN: return "System Admin";
       default: return "User";
     }
   };
@@ -65,8 +70,8 @@ const Header: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400">{getRoleLabel()}</p>
           </div>
           <img
-            src={user?.profilePicture}
-            alt={user?.name}
+            src={user?.faceImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3b82f6&color=fff`}
+            alt={user?.name || "User"}
             className="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
           />
         </div>

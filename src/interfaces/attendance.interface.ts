@@ -12,7 +12,7 @@ export interface AttendanceInterface {
   checkOutTime?: Date;
   status: AttendanceStatus;
   confidenceScore?: number; // face recognition confidence
-  source: "kiosk" | "mobile" | "admin";
+  source: "kiosk" | "mobile";
   courseName?: string;
   courseCode?: string;
 }

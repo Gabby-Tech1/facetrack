@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@radix-ui/themes";
 import {
     BookOpen,
@@ -11,28 +11,52 @@ import {
     ArrowUpRight,
     Copy,
     ScanFace,
+    Loader2,
 } from "lucide-react";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Header from "../../components/dashboard/Header";
-import { useAuth } from "../../contexts/AuthContext";
-import { getCoursesByLecturer } from "../../data/courses";
+import { useAuthStore } from "../../store/auth.store";
+import { coursesApi } from "../../api/courses.api";
 import { useData } from "../../contexts/DataContext";
-import type { Lecturer } from "../../interfaces/user.interface";
 import type { AttendanceInterface } from "../../interfaces/attendance.interface";
+import type { Course } from "../../types";
 import { toast } from "sonner";
 import FaceScannerModal from "../../components/attendance/FaceScannerModal";
 
 const LecturerDashboard: React.FC = () => {
-    const { user } = useAuth();
+    const { user } = useAuthStore();
     const { addAttendanceRecord, addSession, closeSession, sessions: allSessions } = useData();
-    const lecturer = user as Lecturer;
     const navigate = (path: string) => window.location.href = path; // Simple navigation mock or use router if available
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showClockIn, setShowClockIn] = useState(false);
     const [sessionToEnd, setSessionToEnd] = useState<string | null>(null);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch courses from backend
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setIsLoading(true);
+                const response = await coursesApi.getAllCourses();
+                if (response.success && response.data) {
+                    setCourses(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch courses:", error);
+                toast.error("Failed to load courses");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCourses();
+    }, []);
 
     const handleClockInVerify = async () => {
+        if (!user) return;
+        
         // Simulate backend verification delay
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -45,9 +69,9 @@ const LecturerDashboard: React.FC = () => {
         addAttendanceRecord({
             sessionId: "DAILY_CLOCK_IN",
             sessionName: "Daily Check-in",
-            userId: lecturer.id,
-            userName: lecturer.name,
-            userEmail: lecturer.email,
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
             date: now,
             checkInTime: now,
             status: status,
@@ -61,13 +85,13 @@ const LecturerDashboard: React.FC = () => {
         toast.success(`Clocked in successfully! Marked as ${status}`);
     };
 
-    const courses = getCoursesByLecturer(lecturer.id);
     // Filter sessions from the live store instead of static data
-    const sessions = allSessions.filter(s => s.creator.id === lecturer.id || (s as any).lecturerId === lecturer.id);
+    // TODO: Replace with proper API filtering when backend integration is complete
+    const sessions = allSessions.filter(s => s.creator.id === user?.id || (s as unknown as Record<string, unknown>).lecturerId === user?.id);
     const activeSessions = sessions.filter((s) => s.status === "OPEN");
     const completedSessions = sessions.filter((s) => s.status === "CLOSED").length;
 
-    const totalStudents = courses.reduce((acc, course) => acc + course.enrolledStudents.length, 0);
+    const totalStudents = courses.reduce((acc, course) => acc + (course.enrollments?.length || 0), 0);
 
     const copyToken = (token: string) => {
         navigator.clipboard.writeText(token);
@@ -89,7 +113,7 @@ const LecturerDashboard: React.FC = () => {
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
                             <div>
                                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">
-                                    Good morning, Dr. {lecturer.name.split(" ").pop()}
+                                    Good morning, Dr. {user?.name?.split(" ").pop() || "Lecturer"}
                                 </h1>
                                 <p className="text-lg text-slate-500 dark:text-slate-400">
                                     You have {activeSessions.length} active {activeSessions.length === 1 ? "session" : "sessions"} today
@@ -174,7 +198,7 @@ const LecturerDashboard: React.FC = () => {
                             <StatCard
                                 icon={BookOpen}
                                 label="Courses"
-                                value={courses.length}
+                                value={isLoading ? "..." : courses.length}
                                 subtext="Assigned to you"
                                 color="blue"
                             />
@@ -195,8 +219,8 @@ const LecturerDashboard: React.FC = () => {
                             <StatCard
                                 icon={DollarSign}
                                 label="Earnings"
-                                value={`GH₵${(lecturer.hourlyRate * lecturer.totalHoursWorked).toLocaleString()}`}
-                                subtext={`${lecturer.totalHoursWorked}h worked`}
+                                value="GH₵0"
+                                subtext="0h worked"
                                 color="emerald"
                                 highlight
                             />
@@ -218,30 +242,38 @@ const LecturerDashboard: React.FC = () => {
                                     </span>
                                 </div>
                                 <div className="space-y-3">
-                                    {courses.map((course) => (
-                                        <div
-                                            key={course.id}
-                                            className="group p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer"
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">{course.code}</span>
+                                    {isLoading ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                                        </div>
+                                    ) : courses.length === 0 ? (
+                                        <p className="text-center py-8 text-slate-500">No courses assigned yet</p>
+                                    ) : (
+                                        courses.map((course) => (
+                                            <div
+                                                key={course.id}
+                                                className="group p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">{course.code}</span>
+                                                        </div>
+                                                        <h3 className="text-slate-900 dark:text-white font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                            {course.title}
+                                                        </h3>
                                                     </div>
-                                                    <h3 className="text-slate-900 dark:text-white font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                        {course.name}
-                                                    </h3>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="text-right">
-                                                        <p className="text-slate-900 dark:text-white font-semibold">{course.enrolledStudents.length}</p>
-                                                        <p className="text-xs text-slate-500">students</p>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-right">
+                                                            <p className="text-slate-900 dark:text-white font-semibold">{course.enrollments?.length || 0}</p>
+                                                            <p className="text-xs text-slate-500">students</p>
+                                                        </div>
+                                                        <ArrowUpRight size={18} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                                                     </div>
-                                                    <ArrowUpRight size={18} className="text-slate-400 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
@@ -294,10 +326,10 @@ const LecturerDashboard: React.FC = () => {
                                         Total Earnings
                                     </p>
                                     <p className="text-4xl font-bold text-white">
-                                        GH₵{lecturer.totalEarnings.toLocaleString()}
+                                        GH₵0
                                     </p>
                                     <p className="text-emerald-200 mt-1">
-                                        {lecturer.totalHoursWorked} hours @ GH₵{lecturer.hourlyRate}/hr
+                                        0 hours @ GH₵0/hr
                                     </p>
                                 </div>
                                 <button
@@ -332,7 +364,7 @@ const LecturerDashboard: React.FC = () => {
                                 <select className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500">
                                     {courses.map((course) => (
                                         <option key={course.id} value={course.id}>
-                                            {course.code} - {course.name}
+                                            {course.code} - {course.title}
                                         </option>
                                     ))}
                                 </select>
@@ -376,17 +408,17 @@ const LecturerDashboard: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    // In a real app, gather form data. Here we simulate proper data entry
+                                    // TODO: Replace mock session creation with real API call
                                     const newSession = {
                                         name: "New Session", // Could use state for input
                                         courseCode: courses[0]?.code || "CS101",
-                                        courseName: courses[0]?.name || "Intro to CS",
+                                        courseName: courses[0]?.title || "Intro to CS",
                                         creator: {
-                                            id: lecturer.id,
-                                            name: lecturer.name,
-                                            email: lecturer.email,
+                                            id: user?.id || "",
+                                            name: user?.name || "",
+                                            email: user?.email || "",
                                             role: "lecturer"
-                                        } as any,
+                                        },
                                         startTime: new Date(),
                                         endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours later
                                         location: "Room 101",
@@ -394,11 +426,11 @@ const LecturerDashboard: React.FC = () => {
                                         mode: "CHECK_IN" as const, // Default mode
                                         type: "CLASS" as const,
                                         token: Math.random().toString(36).substr(2, 6).toUpperCase(),
-                                        expectedMembersCount: courses[0]?.enrolledStudents.length || 0,
+                                        expectedMembersCount: courses[0]?.enrollments?.length || 0,
                                         actualMembersCount: 0,
                                         attendance: []
                                     };
-                                    addSession(newSession as any);
+                                    addSession(newSession as unknown as Parameters<typeof addSession>[0]);
                                     setShowCreateModal(false);
                                     toast.success("Session created successfully!");
                                 }}
